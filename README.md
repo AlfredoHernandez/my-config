@@ -1,40 +1,93 @@
 # My Config
 
-*Backup of my Xcode configuration and various settings*
+*Backup of my Xcode configuration, shell aliases, and various development settings*
 
 ![Alfredo](./alfredo_hdz.png)
 
 ## Contents
 
-- Xcode color theme
-- Default [header file template](https://oleb.net/blog/2017/07/xcode-9-text-macros/)
-- Saved [user breakpoints](https://pspdfkit.com/blog/2017/user-breakpoints-in-xcode/)
+- **Xcode Configuration**
+  - Color themes (7 custom themes)
+  - Default [header file template](https://oleb.net/blog/2017/07/xcode-9-text-macros/)
+  - Test templates (XCTest and Swift Testing)
+- **Shell Configuration**
+  - Git aliases for common operations
+  - Xcode aliases for SPM operations
+  - Enhanced `ls` commands using [eza](https://formulae.brew.sh/formula/eza#default)
+  - Custom script aliases
+- **Custom Scripts**
+  - `deeplink.sh` - Open deeplinks in iOS Simulator
 
 ## Installation
 
-Use the `install.sh` script
+The `install.sh` script will automatically:
 
-1. Clone the repository
-2. Open the terminal and navigate to the root of the repository. 
-3. Run the `install.sh` script.
+1. **Install Homebrew** (if not present)
+2. **Install eza** (modern `ls` replacement)
+3. **Add shell aliases** to your `.zshrc`
+4. **Install custom scripts** to `~/Developer/bin/`
+5. **Install Xcode templates and themes**
 
-## Usage
+### Quick Start
 
 ```bash
-> git git@github.com:AlfredoHernandez/my-config.git
-> cd my-config
+# Clone the repository
+git clone git@github.com:AlfredoHernandez/my-config.git
+cd my-config
+
+# Install everything
+./install.sh
+
+# Restart terminal or reload shell
+source ~/.zshrc
 ```
+
+## Usage
 
 ### Install
 
 ```bash
-> ./install.sh
+./install.sh
 ```
 
 ### Backup
 
 ```bash
-> ./backup.sh
+./backup.sh
 ```
+
+## Available Aliases
+
+### Git Aliases
+- `gl` - git pull
+- `gd` - git diff
+- `gp` - git push
+- `gst` - git status
+- `ga` - git add .
+- `gc` - git commit
+- `gca` - git commit --amend --no-edit
+- `glog` - git log
+- `gcp` - git cherry-pick
+- `cleanup` - Delete merged branches
+- `grh` - git reset --soft HEAD~1
+
+### Xcode Aliases
+- `spm` - Resolve SPM dependencies
+
+### Enhanced ls Commands (using eza)
+- `ls` - Grid view with icons and colors
+- `ll` - Long format with icons
+- `la` - Grid view with hidden files
+- `lla` - Long format with hidden files
+
+### Custom Scripts
+- `dl <deeplink>` - Open deeplink in iOS Simulator
+
+## Requirements
+
+- macOS
+- Xcode
+- zsh shell
+- Internet connection (for Homebrew and eza installation)
 
 

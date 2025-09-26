@@ -37,6 +37,24 @@ install_eza() {
     fi
 }
 
+# Function to install SwiftFormat if not present
+install_swiftformat() {
+    if ! command_exists swiftformat; then
+        echo "[*] Installing SwiftFormat..."
+        brew install swiftformat
+        echo "[*] SwiftFormat installed successfully"
+    else
+        echo "[*] SwiftFormat already installed"
+    fi
+}
+
+# Function to install SwiftFormat configuration
+install_swiftformat_config() {
+    echo "[*] Installing SwiftFormat configuration"
+    cp scripts/.swiftformat ~/.swiftformat
+    echo "[*] SwiftFormat configuration installed successfully"
+}
+
 # Function to add aliases to .zshrc
 add_aliases_to_zshrc() {
     local zshrc_file="$HOME/.zshrc"
@@ -95,6 +113,12 @@ install_homebrew
 
 # Check and install eza
 install_eza
+
+# Check and install SwiftFormat
+install_swiftformat
+
+# Install SwiftFormat configuration
+install_swiftformat_config
 
 # Install custom scripts
 install_custom_scripts

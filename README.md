@@ -24,6 +24,10 @@ This repository contains my personal development configuration that I use across
 ### 🛠️ Custom Scripts
 - **`deeplink.sh`** - Open deeplinks directly in iOS Simulator for testing
 
+### 🎨 Code Formatting
+- **SwiftFormat** - Automatic Swift code formatting with [SwiftFormat](https://github.com/nicklockwood/SwiftFormat)
+- **Custom Configuration** - Pre-configured formatting rules for consistent code style
+
 ## ⚡ Quick Installation
 
 The installation process is fully automated and will set up everything you need:
@@ -46,9 +50,11 @@ The `install.sh` script automatically handles:
 
 1. **Homebrew Installation** - Installs Homebrew package manager if not present
 2. **eza Installation** - Modern replacement for `ls` with better formatting and icons
-3. **Shell Aliases** - Adds all aliases to your `.zshrc` file
-4. **Script Installation** - Copies custom scripts to `~/Developer/bin/`
-5. **Xcode Integration** - Installs templates and color themes
+3. **SwiftFormat Installation** - Installs SwiftFormat for automatic code formatting
+4. **SwiftFormat Configuration** - Copies custom formatting rules to `~/.swiftformat`
+5. **Shell Aliases** - Adds all aliases to your `.zshrc` file
+6. **Script Installation** - Copies custom scripts to `~/Developer/bin/`
+7. **Xcode Integration** - Installs templates and color themes
 
 ## 🎯 Usage
 
@@ -96,6 +102,40 @@ The `install.sh` script automatically handles:
 | Alias | Command | Description |
 |-------|---------|-------------|
 | `dl <deeplink>` | `deeplink.sh <deeplink>` | Open deeplink in iOS Simulator |
+
+## 🎨 SwiftFormat Configuration
+
+This repository includes a comprehensive SwiftFormat configuration that provides:
+
+### Key Features
+- **160 character line width** for modern wide displays
+- **Consistent code style** across all Swift projects
+- **Automatic header insertion** with copyright information
+- **Smart MARK comments** for better code organization
+- **Optimized import grouping** with testable imports first
+
+### Configuration Highlights
+- **Allman braces disabled** - Uses standard Swift brace style
+- **Some/Any syntax enabled** - Modern Swift type syntax
+- **Smart wrapping** - Arguments and parameters wrap before first
+- **Enhanced acronyms** - Proper capitalization for ID, URL, UUID
+- **Blank lines** - Consistent spacing after switch cases
+
+### Usage
+After installation, SwiftFormat will automatically use the configuration from `~/.swiftformat`. You can:
+
+```bash
+# Format a single file
+swiftformat MyFile.swift
+
+# Format all Swift files in current directory
+swiftformat .
+
+# Format with specific options
+swiftformat --config ~/.swiftformat MyProject/
+```
+
+For more information, visit the [SwiftFormat repository](https://github.com/nicklockwood/SwiftFormat).
 
 ## 🎨 Color Themes
 

@@ -45,6 +45,7 @@ print_banner() {
     echo "║    • Homebrew package manager                               ║"
     echo "║    • eza (modern ls replacement)                            ║"
     echo "║    • SwiftFormat (Swift code formatter)                     ║"
+    echo "║    • JetBrains Mono Nerd Font                               ║"
     echo "║    • Custom shell aliases                                   ║"
     echo "║    • Xcode themes and templates                             ║"
     echo "║    • Development scripts                                    ║"
@@ -99,6 +100,40 @@ install_swiftformat() {
     else
         print_success "SwiftFormat already installed"
     fi
+}
+
+# Function to install JetBrains Mono Nerd Font
+install_jetbrains_mono_nerd_font() {
+    print_header "JetBrains Mono Nerd Font Installation"
+    local font_dir="$HOME/Library/Fonts"
+    local font_url="https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/JetBrainsMono.zip"
+    local temp_dir=$(mktemp -d)
+
+    # Check if font is already installed
+    if ls "$font_dir"/JetBrainsMonoNerdFont*.ttf &>/dev/null || \
+       ls "$font_dir"/JetBrainsMonoNFM*.ttf &>/dev/null || \
+       ls /Library/Fonts/JetBrainsMonoNerdFont*.ttf &>/dev/null || \
+       ls /Library/Fonts/JetBrainsMonoNFM*.ttf &>/dev/null; then
+        print_success "JetBrains Mono Nerd Font already installed"
+        return 0
+    fi
+
+    print_status "Downloading JetBrains Mono Nerd Font..."
+    curl -fsSL "$font_url" -o "$temp_dir/JetBrainsMono.zip"
+
+    if [[ $? -ne 0 ]]; then
+        print_warning "Failed to download JetBrains Mono Nerd Font"
+        rm -rf "$temp_dir"
+        return 1
+    fi
+
+    print_status "Installing font..."
+    unzip -q "$temp_dir/JetBrainsMono.zip" -d "$temp_dir/JetBrainsMono"
+    mkdir -p "$font_dir"
+    cp "$temp_dir/JetBrainsMono"/*.ttf "$font_dir/"
+
+    rm -rf "$temp_dir"
+    print_success "JetBrains Mono Nerd Font installed successfully"
 }
 
 # Function to install SwiftFormat configuration
@@ -173,6 +208,9 @@ install_eza
 # Check and install SwiftFormat
 install_swiftformat
 
+# Check and install JetBrains Mono Nerd Font
+install_jetbrains_mono_nerd_font
+
 # Install SwiftFormat configuration
 install_swiftformat_config
 
@@ -214,6 +252,7 @@ echo -e "\n${CYAN}📋 What was installed:${NC}"
 echo -e "  ${GREEN}✓${NC} Homebrew package manager"
 echo -e "  ${GREEN}✓${NC} eza (modern ls replacement)"
 echo -e "  ${GREEN}✓${NC} SwiftFormat with custom configuration"
+echo -e "  ${GREEN}✓${NC} JetBrains Mono Nerd Font"
 echo -e "  ${GREEN}✓${NC} Shell aliases for Git and development"
 echo -e "  ${GREEN}✓${NC} Xcode themes and templates"
 echo -e "  ${GREEN}✓${NC} Custom development scripts"

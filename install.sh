@@ -76,7 +76,7 @@ print_banner() {
     echo "║    • eza (modern ls replacement)                            ║"
     echo "║    • SwiftFormat (Swift code formatter)                     ║"
     echo "║    • JetBrains Mono Nerd Font                               ║"
-    echo "║    • Claude Code configuration                              ║"
+    echo "║    • Claude Code configuration and agents                    ║"
     echo "║    • Custom shell aliases                                   ║"
     echo "║    • Xcode themes and templates                             ║"
     echo "║    • Development scripts                                    ║"
@@ -259,6 +259,31 @@ install_claude_config() {
     fi
 }
 
+# Function to install Claude agents
+install_claude_agents() {
+    print_header "Claude Agents Installation"
+    local agents_src="claude/agents"
+    local agents_dest="$HOME/.claude/agents"
+
+    if [[ ! -d "$agents_src" ]]; then
+        print_warning "No agents directory found in $agents_src, skipping..."
+        return 0
+    fi
+
+    if $DRY_RUN; then
+        print_dry_run "Create directory $agents_dest"
+        print_dry_run "Copy $agents_src/ to $agents_dest/"
+    else
+        print_status "Installing Claude agents..."
+        mkdir -p "$agents_dest"
+        cp -r "$agents_src"/* "$agents_dest/" 2>/dev/null || {
+            print_warning "No agents found to install"
+            return 0
+        }
+        print_success "Claude agents installed to $agents_dest"
+    fi
+}
+
 # Function to install custom scripts
 install_custom_scripts() {
     print_header "Custom Scripts Installation"
@@ -302,6 +327,9 @@ install_swiftformat_config
 
 # Install Claude Code configuration
 install_claude_config
+
+# Install Claude agents
+install_claude_agents
 
 # Install custom scripts
 install_custom_scripts
@@ -355,7 +383,7 @@ if $DRY_RUN; then
     echo -e "  ${YELLOW}○${NC} eza (modern ls replacement)"
     echo -e "  ${YELLOW}○${NC} SwiftFormat with custom configuration"
     echo -e "  ${YELLOW}○${NC} JetBrains Mono Nerd Font"
-    echo -e "  ${YELLOW}○${NC} Claude Code configuration"
+    echo -e "  ${YELLOW}○${NC} Claude Code configuration and agents"
     echo -e "  ${YELLOW}○${NC} Shell aliases for Git and development"
     echo -e "  ${YELLOW}○${NC} Xcode themes and templates"
     echo -e "  ${YELLOW}○${NC} Custom development scripts"
@@ -370,7 +398,7 @@ else
     echo -e "  ${GREEN}✓${NC} eza (modern ls replacement)"
     echo -e "  ${GREEN}✓${NC} SwiftFormat with custom configuration"
     echo -e "  ${GREEN}✓${NC} JetBrains Mono Nerd Font"
-    echo -e "  ${GREEN}✓${NC} Claude Code configuration"
+    echo -e "  ${GREEN}✓${NC} Claude Code configuration and agents"
     echo -e "  ${GREEN}✓${NC} Shell aliases for Git and development"
     echo -e "  ${GREEN}✓${NC} Xcode themes and templates"
     echo -e "  ${GREEN}✓${NC} Custom development scripts"

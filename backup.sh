@@ -46,6 +46,15 @@ else
     echo "[!] No CLAUDE.md found to backup"
 fi
 
+# Backup Claude agents
+echo "[*] Backing up Claude agents..."
+if [ -d "$HOME/.claude/agents" ]; then
+    mkdir -p "$DEST/claude/agents"
+    cp -r "$HOME/.claude/agents"/* "$DEST/claude/agents/" 2>/dev/null || echo "[!] No agents found to backup"
+else
+    echo "[!] No agents directory found to backup"
+fi
+
 echo "[*] Backup completed successfully!"
 # cp "$XC_USER_DATA"/KeyBindings/*.idekeybindings "$DEST"
 # cp "$XC_USER_DATA"/xcdebugger/Breakpoints_v2.xcbkptlist "$DEST"

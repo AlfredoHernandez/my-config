@@ -37,6 +37,15 @@ else
     echo "[!] No .zshrc file found to backup"
 fi
 
+# Backup Claude Code configuration
+echo "[*] Backing up Claude Code configuration..."
+if [ -f "$HOME/.claude/CLAUDE.md" ]; then
+    mkdir -p "$DEST/claude"
+    cp "$HOME/.claude/CLAUDE.md" "$DEST/claude/" 2>/dev/null || echo "[!] Failed to backup CLAUDE.md"
+else
+    echo "[!] No CLAUDE.md found to backup"
+fi
+
 echo "[*] Backup completed successfully!"
 # cp "$XC_USER_DATA"/KeyBindings/*.idekeybindings "$DEST"
 # cp "$XC_USER_DATA"/xcdebugger/Breakpoints_v2.xcbkptlist "$DEST"

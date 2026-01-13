@@ -76,6 +76,7 @@ print_banner() {
     echo "║    • eza (modern ls replacement)                            ║"
     echo "║    • SwiftFormat (Swift code formatter)                     ║"
     echo "║    • JetBrains Mono Nerd Font                               ║"
+    echo "║    • Claude Code configuration                              ║"
     echo "║    • Custom shell aliases                                   ║"
     echo "║    • Xcode themes and templates                             ║"
     echo "║    • Development scripts                                    ║"
@@ -242,6 +243,22 @@ alias dl=\"~/Developer/bin/deeplink.sh\"
     fi
 }
 
+# Function to install Claude Code configuration
+install_claude_config() {
+    print_header "Claude Code Configuration"
+    local claude_dir="$HOME/.claude"
+
+    if $DRY_RUN; then
+        print_dry_run "Create directory $claude_dir"
+        print_dry_run "Copy claude/CLAUDE.md to $claude_dir/CLAUDE.md"
+    else
+        print_status "Installing Claude Code configuration..."
+        mkdir -p "$claude_dir"
+        cp claude/CLAUDE.md "$claude_dir/CLAUDE.md"
+        print_success "Claude Code configuration installed to $claude_dir/CLAUDE.md"
+    fi
+}
+
 # Function to install custom scripts
 install_custom_scripts() {
     print_header "Custom Scripts Installation"
@@ -282,6 +299,9 @@ install_jetbrains_mono_nerd_font
 
 # Install SwiftFormat configuration
 install_swiftformat_config
+
+# Install Claude Code configuration
+install_claude_config
 
 # Install custom scripts
 install_custom_scripts
@@ -335,6 +355,7 @@ if $DRY_RUN; then
     echo -e "  ${YELLOW}○${NC} eza (modern ls replacement)"
     echo -e "  ${YELLOW}○${NC} SwiftFormat with custom configuration"
     echo -e "  ${YELLOW}○${NC} JetBrains Mono Nerd Font"
+    echo -e "  ${YELLOW}○${NC} Claude Code configuration"
     echo -e "  ${YELLOW}○${NC} Shell aliases for Git and development"
     echo -e "  ${YELLOW}○${NC} Xcode themes and templates"
     echo -e "  ${YELLOW}○${NC} Custom development scripts"
@@ -349,6 +370,7 @@ else
     echo -e "  ${GREEN}✓${NC} eza (modern ls replacement)"
     echo -e "  ${GREEN}✓${NC} SwiftFormat with custom configuration"
     echo -e "  ${GREEN}✓${NC} JetBrains Mono Nerd Font"
+    echo -e "  ${GREEN}✓${NC} Claude Code configuration"
     echo -e "  ${GREEN}✓${NC} Shell aliases for Git and development"
     echo -e "  ${GREEN}✓${NC} Xcode themes and templates"
     echo -e "  ${GREEN}✓${NC} Custom development scripts"

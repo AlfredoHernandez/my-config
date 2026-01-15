@@ -4,8 +4,104 @@ USER="$(whoami)"
 XC_DIR="/Users/$USER/Library/Developer/Xcode"
 XC_USER_DATA="$XC_DIR/UserData"
 
-# Dry run mode (default: false)
+# Installation flags (default: install everything)
 DRY_RUN=false
+INSTALL_ALL=true
+INSTALL_HOMEBREW=false
+INSTALL_TOOLS=false
+INSTALL_FONT=false
+INSTALL_SWIFTFORMAT_CONFIG=false
+INSTALL_ALIASES=false
+INSTALL_SCRIPTS=false
+INSTALL_XCODE=false
+INSTALL_THEMES=false
+INSTALL_TEMPLATES=false
+INSTALL_HEADER=false
+INSTALL_CLAUDE=false
+
+# Skip flags
+SKIP_HOMEBREW=false
+SKIP_TOOLS=false
+SKIP_FONT=false
+SKIP_SWIFTFORMAT_CONFIG=false
+SKIP_ALIASES=false
+SKIP_SCRIPTS=false
+SKIP_XCODE=false
+SKIP_THEMES=false
+SKIP_TEMPLATES=false
+SKIP_HEADER=false
+SKIP_CLAUDE=false
+
+# Function to show help
+show_help() {
+    echo "Usage: ./install.sh [OPTIONS]"
+    echo ""
+    echo "By default, installs all components. Use flags to customize installation."
+    echo ""
+    echo "General Options:"
+    echo "  --dry-run, -n              Preview what would be installed without making changes"
+    echo "  --help, -h                 Show this help message"
+    echo "  --list                     List all available components"
+    echo ""
+    echo "Install Specific Components (only installs selected components):"
+    echo "  --only-homebrew            Install only Homebrew package manager"
+    echo "  --only-tools               Install only development tools (eza, SwiftFormat)"
+    echo "  --only-font                Install only JetBrains Mono Nerd Font"
+    echo "  --only-swiftformat-config  Install only SwiftFormat configuration"
+    echo "  --only-aliases             Install only shell aliases"
+    echo "  --only-scripts             Install only custom scripts"
+    echo "  --only-xcode               Install all Xcode components (themes, templates, headers)"
+    echo "  --only-themes              Install only Xcode color themes"
+    echo "  --only-templates           Install only Xcode templates"
+    echo "  --only-header              Install only Xcode header template"
+    echo "  --only-claude              Install only Claude Code configuration and agents"
+    echo ""
+    echo "Skip Specific Components (installs everything except specified):"
+    echo "  --skip-homebrew            Skip Homebrew installation"
+    echo "  --skip-tools               Skip development tools installation"
+    echo "  --skip-font                Skip font installation"
+    echo "  --skip-swiftformat-config  Skip SwiftFormat configuration"
+    echo "  --skip-aliases             Skip shell aliases"
+    echo "  --skip-scripts             Skip custom scripts"
+    echo "  --skip-xcode               Skip all Xcode components"
+    echo "  --skip-themes              Skip Xcode themes"
+    echo "  --skip-templates           Skip Xcode templates"
+    echo "  --skip-header              Skip Xcode header template"
+    echo "  --skip-claude              Skip Claude Code configuration"
+    echo ""
+    echo "Examples:"
+    echo "  ./install.sh                           # Install everything"
+    echo "  ./install.sh --only-themes             # Install only Xcode themes"
+    echo "  ./install.sh --only-tools --only-font  # Install only tools and font"
+    echo "  ./install.sh --skip-xcode              # Install everything except Xcode components"
+    echo "  ./install.sh --dry-run --only-themes   # Preview theme installation"
+    echo ""
+}
+
+# Function to list components
+list_components() {
+    echo "Available Components:"
+    echo ""
+    echo "Development Tools:"
+    echo "  • homebrew             - Homebrew package manager"
+    echo "  • tools                - eza (modern ls) and SwiftFormat"
+    echo "  • font                 - JetBrains Mono Nerd Font"
+    echo "  • swiftformat-config   - SwiftFormat configuration file"
+    echo ""
+    echo "Shell Configuration:"
+    echo "  • aliases              - Git, Xcode, and custom aliases"
+    echo "  • scripts              - Custom development scripts"
+    echo ""
+    echo "Xcode Configuration:"
+    echo "  • xcode                - All Xcode components (themes, templates, headers)"
+    echo "  • themes               - Color themes"
+    echo "  • templates            - File templates"
+    echo "  • header               - Header template"
+    echo ""
+    echo "Claude Code:"
+    echo "  • claude               - Configuration and custom agents"
+    echo ""
+}
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -15,12 +111,119 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --help|-h)
-            echo "Usage: ./install.sh [OPTIONS]"
-            echo ""
-            echo "Options:"
-            echo "  --dry-run, -n    Preview what would be installed without making changes"
-            echo "  --help, -h       Show this help message"
+            show_help
             exit 0
+            ;;
+        --list)
+            list_components
+            exit 0
+            ;;
+        # Only flags
+        --only-homebrew)
+            INSTALL_ALL=false
+            INSTALL_HOMEBREW=true
+            shift
+            ;;
+        --only-tools)
+            INSTALL_ALL=false
+            INSTALL_TOOLS=true
+            shift
+            ;;
+        --only-font)
+            INSTALL_ALL=false
+            INSTALL_FONT=true
+            shift
+            ;;
+        --only-swiftformat-config)
+            INSTALL_ALL=false
+            INSTALL_SWIFTFORMAT_CONFIG=true
+            shift
+            ;;
+        --only-aliases)
+            INSTALL_ALL=false
+            INSTALL_ALIASES=true
+            shift
+            ;;
+        --only-scripts)
+            INSTALL_ALL=false
+            INSTALL_SCRIPTS=true
+            shift
+            ;;
+        --only-xcode)
+            INSTALL_ALL=false
+            INSTALL_XCODE=true
+            INSTALL_THEMES=true
+            INSTALL_TEMPLATES=true
+            INSTALL_HEADER=true
+            shift
+            ;;
+        --only-themes)
+            INSTALL_ALL=false
+            INSTALL_THEMES=true
+            shift
+            ;;
+        --only-templates)
+            INSTALL_ALL=false
+            INSTALL_TEMPLATES=true
+            shift
+            ;;
+        --only-header)
+            INSTALL_ALL=false
+            INSTALL_HEADER=true
+            shift
+            ;;
+        --only-claude)
+            INSTALL_ALL=false
+            INSTALL_CLAUDE=true
+            shift
+            ;;
+        # Skip flags
+        --skip-homebrew)
+            SKIP_HOMEBREW=true
+            shift
+            ;;
+        --skip-tools)
+            SKIP_TOOLS=true
+            shift
+            ;;
+        --skip-font)
+            SKIP_FONT=true
+            shift
+            ;;
+        --skip-swiftformat-config)
+            SKIP_SWIFTFORMAT_CONFIG=true
+            shift
+            ;;
+        --skip-aliases)
+            SKIP_ALIASES=true
+            shift
+            ;;
+        --skip-scripts)
+            SKIP_SCRIPTS=true
+            shift
+            ;;
+        --skip-xcode)
+            SKIP_XCODE=true
+            SKIP_THEMES=true
+            SKIP_TEMPLATES=true
+            SKIP_HEADER=true
+            shift
+            ;;
+        --skip-themes)
+            SKIP_THEMES=true
+            shift
+            ;;
+        --skip-templates)
+            SKIP_TEMPLATES=true
+            shift
+            ;;
+        --skip-header)
+            SKIP_HEADER=true
+            shift
+            ;;
+        --skip-claude)
+            SKIP_CLAUDE=true
+            shift
             ;;
         *)
             echo "Unknown option: $1"
@@ -29,6 +232,30 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+# Helper function to check if component should be installed
+should_install() {
+    local component=$1
+    local install_flag=$2
+    local skip_flag=$3
+    
+    # If skip flag is set, don't install
+    if [ "$skip_flag" = true ]; then
+        return 1
+    fi
+    
+    # If install all is true and not skipped, install
+    if [ "$INSTALL_ALL" = true ]; then
+        return 0
+    fi
+    
+    # Otherwise, check if specific component is requested
+    if [ "$install_flag" = true ]; then
+        return 0
+    fi
+    
+    return 1
+}
 
 # Colors for better output
 RED='\033[0;31m'
@@ -308,70 +535,112 @@ if $DRY_RUN; then
     echo -e "${YELLOW}║           No changes will be made to your system             ║${NC}"
     echo -e "${YELLOW}╚══════════════════════════════════════════════════════════════╝${NC}"
 fi
+
+# Show what will be installed
+if ! $INSTALL_ALL; then
+    print_info "Selective installation mode enabled"
+    echo -e "${CYAN}Components to install:${NC}"
+    $INSTALL_HOMEBREW && echo "  • Homebrew"
+    $INSTALL_TOOLS && echo "  • Development tools (eza, SwiftFormat)"
+    $INSTALL_FONT && echo "  • JetBrains Mono Nerd Font"
+    $INSTALL_SWIFTFORMAT_CONFIG && echo "  • SwiftFormat configuration"
+    $INSTALL_ALIASES && echo "  • Shell aliases"
+    $INSTALL_SCRIPTS && echo "  • Custom scripts"
+    $INSTALL_CLAUDE && echo "  • Claude Code configuration"
+    $INSTALL_THEMES && echo "  • Xcode themes"
+    $INSTALL_TEMPLATES && echo "  • Xcode templates"
+    $INSTALL_HEADER && echo "  • Xcode header template"
+    echo ""
+fi
+
 print_info "Starting installation process..."
 
 # Check and install Homebrew
-install_homebrew
+if should_install "homebrew" "$INSTALL_HOMEBREW" "$SKIP_HOMEBREW"; then
+    install_homebrew
+fi
 
 # Check and install eza
-install_eza
+if should_install "tools" "$INSTALL_TOOLS" "$SKIP_TOOLS"; then
+    install_eza
+fi
 
 # Check and install SwiftFormat
-install_swiftformat
+if should_install "tools" "$INSTALL_TOOLS" "$SKIP_TOOLS"; then
+    install_swiftformat
+fi
 
 # Check and install JetBrains Mono Nerd Font
-install_jetbrains_mono_nerd_font
+if should_install "font" "$INSTALL_FONT" "$SKIP_FONT"; then
+    install_jetbrains_mono_nerd_font
+fi
 
 # Install SwiftFormat configuration
-install_swiftformat_config
+if should_install "swiftformat-config" "$INSTALL_SWIFTFORMAT_CONFIG" "$SKIP_SWIFTFORMAT_CONFIG"; then
+    install_swiftformat_config
+fi
 
 # Install Claude Code configuration
-install_claude_config
+if should_install "claude" "$INSTALL_CLAUDE" "$SKIP_CLAUDE"; then
+    install_claude_config
+fi
 
 # Install Claude agents
-install_claude_agents
+if should_install "claude" "$INSTALL_CLAUDE" "$SKIP_CLAUDE"; then
+    install_claude_agents
+fi
 
 # Install custom scripts
-install_custom_scripts
+if should_install "scripts" "$INSTALL_SCRIPTS" "$SKIP_SCRIPTS"; then
+    install_custom_scripts
+fi
 
 # Add aliases to .zshrc
-print_header "Shell Configuration"
-add_aliases_to_zshrc
+if should_install "aliases" "$INSTALL_ALIASES" "$SKIP_ALIASES"; then
+    print_header "Shell Configuration"
+    add_aliases_to_zshrc
+fi
 
 # XCode templates
-print_header "Xcode Templates Installation"
-XC_TEMPLATES_DIR="$XC_DIR/Templates"
-if $DRY_RUN; then
-    print_dry_run "Create directory $XC_TEMPLATES_DIR"
-    print_dry_run "Copy Templates/ to $XC_TEMPLATES_DIR"
-else
-    print_status "Installing Xcode templates..."
-    mkdir -p $XC_TEMPLATES_DIR
-    cp -r Templates/ $XC_TEMPLATES_DIR
-    print_success "Xcode templates installed successfully"
+if should_install "templates" "$INSTALL_TEMPLATES" "$SKIP_TEMPLATES"; then
+    print_header "Xcode Templates Installation"
+    XC_TEMPLATES_DIR="$XC_DIR/Templates"
+    if $DRY_RUN; then
+        print_dry_run "Create directory $XC_TEMPLATES_DIR"
+        print_dry_run "Copy Templates/ to $XC_TEMPLATES_DIR"
+    else
+        print_status "Installing Xcode templates..."
+        mkdir -p $XC_TEMPLATES_DIR
+        cp -r Templates/ $XC_TEMPLATES_DIR
+        print_success "Xcode templates installed successfully"
+    fi
 fi
 
 # Xcode themes
-print_header "Xcode Themes Installation"
-THEMES_DIR="$XC_USER_DATA/FontAndColorThemes/"
-if $DRY_RUN; then
-    print_dry_run "Create directory $THEMES_DIR"
-    print_dry_run "Copy Themes/*.xccolortheme to $THEMES_DIR"
-else
-    print_status "Installing Xcode color themes..."
-    mkdir -p $THEMES_DIR
-    cp Themes/*.xccolortheme $THEMES_DIR
-    print_success "Xcode themes installed successfully"
+if should_install "themes" "$INSTALL_THEMES" "$SKIP_THEMES"; then
+    print_header "Xcode Themes Installation"
+    THEMES_DIR="$XC_USER_DATA/FontAndColorThemes/"
+    if $DRY_RUN; then
+        print_dry_run "Create directory $THEMES_DIR"
+        print_dry_run "Copy Themes/*.xccolortheme to $THEMES_DIR"
+    else
+        print_status "Installing Xcode color themes..."
+        mkdir -p $THEMES_DIR
+        cp Themes/*.xccolortheme $THEMES_DIR
+        print_success "Xcode themes installed successfully"
+    fi
 fi
 
 # Xcode Header
-print_header "Xcode Header Template"
-if $DRY_RUN; then
-    print_dry_run "Copy Headers/IDETemplateMacros.plist to $XC_USER_DATA"
-else
-    print_status "Installing header template..."
-    cp ./Headers/IDETemplateMacros.plist "$XC_USER_DATA"
-    print_success "Xcode header template installed successfully"
+if should_install "header" "$INSTALL_HEADER" "$SKIP_HEADER"; then
+    print_header "Xcode Header Template"
+    if $DRY_RUN; then
+        print_dry_run "Copy Headers/IDETemplateMacros.plist to $XC_USER_DATA"
+    else
+        print_status "Installing header template..."
+        cp ./Headers/IDETemplateMacros.plist "$XC_USER_DATA"
+        print_success "Xcode header template installed successfully"
+    fi
 fi
 
 # Final message

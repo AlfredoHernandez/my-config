@@ -71,15 +71,64 @@ The `install.sh` script automatically handles:
 ## 🎯 Usage
 
 ### Installation
+
+#### Install Everything
 ```bash
 ./install.sh
 ```
 
-### Preview Installation (Dry Run)
+#### Install Specific Components
+```bash
+# Install only Xcode themes
+./install.sh --only-themes
+
+# Install only development tools and font
+./install.sh --only-tools --only-font
+
+# Install only Claude Code configuration
+./install.sh --only-claude
+
+# Install all Xcode components
+./install.sh --only-xcode
+```
+
+#### Skip Specific Components
+```bash
+# Install everything except Xcode components
+./install.sh --skip-xcode
+
+# Install everything except themes
+./install.sh --skip-themes
+
+# Skip Homebrew installation
+./install.sh --skip-homebrew
+```
+
+#### Available Components
+- `--only-homebrew` / `--skip-homebrew` - Homebrew package manager
+- `--only-tools` / `--skip-tools` - Development tools (eza, SwiftFormat)
+- `--only-font` / `--skip-font` - JetBrains Mono Nerd Font
+- `--only-swiftformat-config` / `--skip-swiftformat-config` - SwiftFormat configuration
+- `--only-aliases` / `--skip-aliases` - Shell aliases
+- `--only-scripts` / `--skip-scripts` - Custom scripts
+- `--only-xcode` / `--skip-xcode` - All Xcode components
+- `--only-themes` / `--skip-themes` - Xcode color themes
+- `--only-templates` / `--skip-templates` - Xcode templates
+- `--only-header` / `--skip-header` - Xcode header template
+- `--only-claude` / `--skip-claude` - Claude Code configuration
+
+#### List Available Components
+```bash
+./install.sh --list
+```
+
+#### Preview Installation (Dry Run)
 ```bash
 ./install.sh --dry-run
+
+# Preview specific components
+./install.sh --dry-run --only-themes
 ```
-This shows what would be installed without making any changes to your system.
 
 ### Health Check
 ```bash

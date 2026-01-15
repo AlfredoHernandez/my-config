@@ -253,6 +253,10 @@ This is a personal configuration repository, but suggestions and improvements ar
 - GitHub: [@AlfredoHernandez](https://github.com/AlfredoHernandez)
 - Twitter: [@alfredohdzdev](https://twitter.com/alfredohdzdev)
 
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
 ---
 
 *Happy coding! 🚀*

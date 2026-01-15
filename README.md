@@ -28,6 +28,16 @@ This repository contains my personal development configuration that I use across
 - **SwiftFormat** - Automatic Swift code formatting with [SwiftFormat](https://github.com/nicklockwood/SwiftFormat)
 - **Custom Configuration** - Pre-configured formatting rules for consistent code style
 
+### 🤖 Claude Code Integration
+- **Global Configuration** - Custom instructions for Claude Code in `~/.claude/CLAUDE.md`
+- **Custom Agents** - Specialized AI assistants for common tasks:
+  - `git-commit-messages` - Generates well-formatted commit messages
+  - `swift-testing` - Expert in Swift Testing framework and TDD
+  - `swift-docs` - Swift documentation specialist
+
+### 🔤 Fonts
+- **JetBrains Mono Nerd Font** - Programming font with ligatures and icons
+
 ## ⚡ Quick Installation
 
 The installation process is fully automated and will set up everything you need:
@@ -51,10 +61,12 @@ The `install.sh` script automatically handles:
 1. **Homebrew Installation** - Installs Homebrew package manager if not present
 2. **eza Installation** - Modern replacement for `ls` with better formatting and icons
 3. **SwiftFormat Installation** - Installs SwiftFormat for automatic code formatting
-4. **SwiftFormat Configuration** - Copies custom formatting rules to `~/.swiftformat`
-5. **Shell Aliases** - Adds all aliases to your `.zshrc` file
-6. **Script Installation** - Copies custom scripts to `~/Developer/bin/`
-7. **Xcode Integration** - Installs templates and color themes
+4. **JetBrains Mono Nerd Font** - Installs programming font with ligatures and icons
+5. **SwiftFormat Configuration** - Copies custom formatting rules to `~/.swiftformat`
+6. **Claude Code Configuration** - Installs global instructions and custom agents to `~/.claude/`
+7. **Shell Aliases** - Adds all aliases to your `.zshrc` file
+8. **Script Installation** - Copies custom scripts to `~/Developer/bin/`
+9. **Xcode Integration** - Installs templates and color themes
 
 ## 🎯 Usage
 
@@ -62,6 +74,12 @@ The `install.sh` script automatically handles:
 ```bash
 ./install.sh
 ```
+
+### Preview Installation (Dry Run)
+```bash
+./install.sh --dry-run
+```
+This shows what would be installed without making any changes to your system.
 
 ### Backup Current Configuration
 ```bash

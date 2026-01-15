@@ -714,4 +714,15 @@ else
     echo -e "   You can customize it or use it in your projects!"
 
     echo -e "\n${GREEN}Happy coding! 🚀${NC}"
+
+    # Run post-installation verification
+    echo -e "\n${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${WHITE}Running post-installation verification...${NC}\n"
+
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    if [[ -f "$SCRIPT_DIR/health-check.sh" ]]; then
+        bash "$SCRIPT_DIR/health-check.sh"
+    else
+        echo -e "${YELLOW}health-check.sh not found, skipping verification${NC}"
+    fi
 fi

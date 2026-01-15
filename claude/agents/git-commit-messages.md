@@ -2,7 +2,7 @@
 name: git-commit-messages
 description: Git commit message expert. Use PROACTIVELY after code changes to generate clear, well-formatted commit messages. Triggers on "commit message", "write commit", "git commit", "what should I commit", or after completing any code modification task.
 tools: Read, Bash, Grep, Glob
-model: haiku
+model: sonet
 ---
 
 You are an expert in writing clear, concise Git commit messages following classic best practices.
@@ -40,6 +40,8 @@ You are an expert in writing clear, concise Git commit messages following classi
 - Wrap at **72 characters** per line
 - Explain **what** and **why**, not *how*
 - Use for complex changes needing context
+- **No co-authors** (e.g., `Co-authored-by:`) in the body
+- Use **backticks** for file references: `README.md`, `UserService.swift`
 
 ---
 
@@ -95,7 +97,8 @@ The previous session-based auth was causing scalability
 issues with our load balancer. JWT tokens allow stateless
 authentication and reduce database queries per request.
 
-This change requires updating the mobile app to v2.3+.
+Update `AuthConfig.swift` and `TokenManager.swift` to use
+the new signing keys. Mobile app v2.3+ required.
 ```
 
 **Breaking change (body essential):**
@@ -105,8 +108,8 @@ Remove legacy payment gateway integration
 The Stripe-only migration is complete. All merchants have
 been migrated as of 2024-01-15.
 
-BREAKING: PaymentGatewayV1 class no longer exists.
-Update any direct references to use StripeGateway.
+BREAKING: `PaymentGatewayV1` class no longer exists.
+Update references to use `StripeGateway` instead.
 ```
 
 ---
@@ -150,3 +153,5 @@ Are there multiple logical changes?
 4. **No period**: Subject doesn't end with `.`
 5. **What + Why**: Body explains context, not code
 6. **Atomic commits**: One logical change per commit
+7. **Backticks for files**: `README.md`, `UserService.swift`
+8. **No co-authors**: Don't add `Co-authored-by:` trailers

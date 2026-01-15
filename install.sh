@@ -8,6 +8,9 @@ USER="$(whoami)"
 XC_DIR="/Users/$USER/Library/Developer/Xcode"
 XC_USER_DATA="$XC_DIR/UserData"
 
+# Configuration
+NERD_FONT_VERSION="v3.4.0"
+
 # Installation flags (default: install everything)
 DRY_RUN=false
 INSTALL_ALL=true
@@ -381,7 +384,7 @@ install_swiftformat() {
 install_jetbrains_mono_nerd_font() {
     print_header "JetBrains Mono Nerd Font Installation"
     local font_dir="$HOME/Library/Fonts"
-    local font_url="https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/JetBrainsMono.zip"
+    local font_url="https://github.com/ryanoasis/nerd-fonts/releases/download/${NERD_FONT_VERSION}/JetBrainsMono.zip"
 
     # Check if font is already installed
     if ls "$font_dir"/JetBrainsMonoNerdFont*.ttf &>/dev/null || \

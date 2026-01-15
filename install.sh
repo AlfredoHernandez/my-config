@@ -13,6 +13,7 @@ NERD_FONT_VERSION="v3.4.0"
 
 # Installation flags (default: install everything)
 DRY_RUN=false
+VALIDATE_ONLY=false
 INSTALL_ALL=true
 INSTALL_HOMEBREW=false
 INSTALL_TOOLS=false
@@ -47,6 +48,7 @@ show_help() {
     echo ""
     echo "General Options:"
     echo "  --dry-run, -n              Preview what would be installed without making changes"
+    echo "  --validate, -v             Check system prerequisites before installing"
     echo "  --help, -h                 Show this help message"
     echo "  --list                     List all available components"
     echo ""
@@ -124,6 +126,10 @@ while [[ $# -gt 0 ]]; do
         --list)
             list_components
             exit 0
+            ;;
+        --validate|-v)
+            VALIDATE_ONLY=true
+            shift
             ;;
         # Only flags
         --only-homebrew)
@@ -298,6 +304,156 @@ print_header() {
 print_dry_run() {
     echo -e "${YELLOW}[DRY-RUN]${NC} Would: $1"
 }
+
+print_pass() {
+    echo -e "${GREEN}[✓]${NC} $1"
+}
+
+print_fail() {
+    echo -e "${RED}[✗]${NC} $1"
+}
+
+# Validate system prerequisites
+validate_prerequisites() {
+    echo -e "${WHITE}"
+    echo "╔══════════════════════════════════════════════════════════════╗"
+    echo "║              🔍 System Prerequisites Check                    ║"
+    echo "╚══════════════════════════════════════════════════════════════╝"
+    echo -e "${NC}"
+
+    local passed=0
+    local failed=0
+
+    # Check macOS
+    print_header "Operating System"
+    if [[ "$(uname)" == "Darwin" ]]; then
+        local macos_version=$(sw_vers -productVersion)
+        print_pass "macOS detected (version $macos_version)"
+        ((passed++))
+    else
+        print_fail "macOS required (detected: $(uname))"
+        ((failed++))
+    fi
+
+    # Check architecture
+    local arch=$(uname -m)
+    if [[ "$arch" == "arm64" ]]; then
+        print_pass "Apple Silicon detected"
+    else
+        print_pass "Intel Mac detected"
+    fi
+    ((passed++))
+
+    # Check Xcode Command Line Tools
+    print_header "Development Tools"
+    if xcode-select -p &>/dev/null; then
+        print_pass "Xcode Command Line Tools installed"
+        ((passed++))
+    else
+        print_fail "Xcode Command Line Tools not installed"
+        print_info "  Install with: xcode-select --install"
+        ((failed++))
+    fi
+
+    # Check Git
+    if command -v git &>/dev/null; then
+        local git_version=$(git --version | awk '{print $3}')
+        print_pass "Git installed (version $git_version)"
+        ((passed++))
+    else
+        print_fail "Git not installed"
+        ((failed++))
+    fi
+
+    # Check curl
+    if command -v curl &>/dev/null; then
+        print_pass "curl installed"
+        ((passed++))
+    else
+        print_fail "curl not installed (required for downloads)"
+        ((failed++))
+    fi
+
+    # Check network connectivity
+    print_header "Network"
+    if curl -s --head --connect-timeout 5 https://github.com &>/dev/null; then
+        print_pass "Network connectivity OK (github.com reachable)"
+        ((passed++))
+    else
+        print_fail "Cannot reach github.com"
+        print_info "  Check your internet connection"
+        ((failed++))
+    fi
+
+    # Check disk space
+    print_header "Disk Space"
+    local available_space=$(df -g "$HOME" | awk 'NR==2 {print $4}')
+    if [[ "$available_space" -ge 1 ]]; then
+        print_pass "Sufficient disk space (${available_space}GB available)"
+        ((passed++))
+    else
+        print_fail "Low disk space (${available_space}GB available, need at least 1GB)"
+        ((failed++))
+    fi
+
+    # Check write permissions
+    print_header "Permissions"
+    if [[ -w "$HOME" ]]; then
+        print_pass "Home directory writable"
+        ((passed++))
+    else
+        print_fail "Cannot write to home directory"
+        ((failed++))
+    fi
+
+    if [[ -w "$HOME/Library/Fonts" ]] || mkdir -p "$HOME/Library/Fonts" 2>/dev/null; then
+        print_pass "Fonts directory accessible"
+        ((passed++))
+    else
+        print_fail "Cannot access fonts directory"
+        ((failed++))
+    fi
+
+    # Check shell
+    print_header "Shell"
+    local current_shell=$(basename "$SHELL")
+    if [[ "$current_shell" == "zsh" ]]; then
+        print_pass "Using zsh (recommended)"
+        ((passed++))
+    elif [[ "$current_shell" == "bash" ]]; then
+        print_warning "Using bash (zsh recommended for aliases)"
+        ((passed++))
+    else
+        print_info "Using $current_shell"
+        ((passed++))
+    fi
+
+    # Summary
+    echo ""
+    echo -e "${WHITE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${WHITE}Validation Summary${NC}"
+    echo -e "${WHITE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "  ${GREEN}✓ Passed:${NC} $passed"
+    echo -e "  ${RED}✗ Failed:${NC} $failed"
+    echo -e "${WHITE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+
+    if [[ $failed -eq 0 ]]; then
+        echo -e "${GREEN}All prerequisites met! Ready to install.${NC}"
+        echo -e "${CYAN}Run ./install.sh to begin installation.${NC}"
+        return 0
+    else
+        echo -e "${RED}Some prerequisites are missing.${NC}"
+        echo -e "${YELLOW}Please resolve the issues above before installing.${NC}"
+        return 1
+    fi
+}
+
+# Run validation if requested
+if $VALIDATE_ONLY; then
+    validate_prerequisites
+    exit $?
+fi
 
 print_banner() {
     echo -e "${PURPLE}"

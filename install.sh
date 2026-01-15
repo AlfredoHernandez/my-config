@@ -482,6 +482,11 @@ install_claude_config() {
     print_header "Claude Code Configuration"
     local claude_dir="$HOME/.claude"
 
+    if [[ -f "$claude_dir/CLAUDE.md" ]]; then
+        print_success "Claude Code configuration already exists"
+        return 0
+    fi
+
     if $DRY_RUN; then
         print_dry_run "Create directory $claude_dir"
         print_dry_run "Copy claude/CLAUDE.md to $claude_dir/CLAUDE.md"
@@ -504,6 +509,11 @@ install_claude_agents() {
         return 0
     fi
 
+    if [[ -d "$agents_dest" ]] && [[ -n "$(ls -A "$agents_dest" 2>/dev/null)" ]]; then
+        print_success "Claude agents already installed"
+        return 0
+    fi
+
     if $DRY_RUN; then
         print_dry_run "Create directory $agents_dest"
         print_dry_run "Copy $agents_src/ to $agents_dest/"
@@ -522,6 +532,12 @@ install_claude_agents() {
 install_custom_scripts() {
     print_header "Custom Scripts Installation"
     local bin_dir="$HOME/Developer/bin"
+
+    if [[ -f "$bin_dir/deeplink.sh" ]]; then
+        print_success "Custom scripts already installed"
+        return 0
+    fi
+
     if $DRY_RUN; then
         print_dry_run "Create directory $bin_dir"
         print_dry_run "Copy scripts/deeplink.sh to $bin_dir/"
@@ -612,13 +628,16 @@ fi
 if should_install "templates" "$INSTALL_TEMPLATES" "$SKIP_TEMPLATES"; then
     print_header "Xcode Templates Installation"
     XC_TEMPLATES_DIR="$XC_DIR/Templates"
-    if $DRY_RUN; then
+
+    if [[ -d "$XC_TEMPLATES_DIR" ]] && [[ -n "$(ls -A "$XC_TEMPLATES_DIR" 2>/dev/null)" ]]; then
+        print_success "Xcode templates already installed"
+    elif $DRY_RUN; then
         print_dry_run "Create directory $XC_TEMPLATES_DIR"
         print_dry_run "Copy Templates/ to $XC_TEMPLATES_DIR"
     else
         print_status "Installing Xcode templates..."
-        mkdir -p $XC_TEMPLATES_DIR
-        cp -r Templates/ $XC_TEMPLATES_DIR
+        mkdir -p "$XC_TEMPLATES_DIR"
+        cp -r Templates/ "$XC_TEMPLATES_DIR"
         print_success "Xcode templates installed successfully"
     fi
 fi
@@ -627,13 +646,16 @@ fi
 if should_install "themes" "$INSTALL_THEMES" "$SKIP_THEMES"; then
     print_header "Xcode Themes Installation"
     THEMES_DIR="$XC_USER_DATA/FontAndColorThemes/"
-    if $DRY_RUN; then
+
+    if [[ -d "$THEMES_DIR" ]] && ls "$THEMES_DIR"/*.xccolortheme &>/dev/null; then
+        print_success "Xcode themes already installed"
+    elif $DRY_RUN; then
         print_dry_run "Create directory $THEMES_DIR"
         print_dry_run "Copy Themes/*.xccolortheme to $THEMES_DIR"
     else
         print_status "Installing Xcode color themes..."
-        mkdir -p $THEMES_DIR
-        cp Themes/*.xccolortheme $THEMES_DIR
+        mkdir -p "$THEMES_DIR"
+        cp Themes/*.xccolortheme "$THEMES_DIR"
         print_success "Xcode themes installed successfully"
     fi
 fi
@@ -641,7 +663,10 @@ fi
 # Xcode Header
 if should_install "header" "$INSTALL_HEADER" "$SKIP_HEADER"; then
     print_header "Xcode Header Template"
-    if $DRY_RUN; then
+
+    if [[ -f "$XC_USER_DATA/IDETemplateMacros.plist" ]]; then
+        print_success "Xcode header template already installed"
+    elif $DRY_RUN; then
         print_dry_run "Copy Headers/IDETemplateMacros.plist to $XC_USER_DATA"
     else
         print_status "Installing header template..."

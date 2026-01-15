@@ -81,6 +81,22 @@ The `install.sh` script automatically handles:
 ```
 This shows what would be installed without making any changes to your system.
 
+### Health Check
+```bash
+./health-check.sh
+```
+Verifies that all components are properly installed and configured. The health check will:
+- ✅ Check if all tools are installed (Homebrew, eza, SwiftFormat, fonts)
+- ✅ Verify configuration files exist and are properly configured
+- ✅ Validate Xcode themes, templates, and headers
+- ✅ Check Claude Code configuration and agents
+- ✅ Verify custom scripts are installed and executable
+- ✅ Show version information for installed tools
+- ✅ Detect outdated packages and suggest updates
+- ✅ Provide a health score and recommendations
+
+Run this periodically to ensure your development environment is in good shape!
+
 ### Backup Current Configuration
 ```bash
 ./backup.sh

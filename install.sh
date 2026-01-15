@@ -1,4 +1,8 @@
 #!/bin/bash
+set -euo pipefail
+
+# Error handler - shows where the error occurred
+trap 'echo "Error: Command failed at line $LINENO. Exit code: $?" >&2' ERR
 
 USER="$(whoami)"
 XC_DIR="/Users/$USER/Library/Developer/Xcode"

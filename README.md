@@ -28,6 +28,16 @@ This repository contains my personal development configuration that I use across
 - **SwiftFormat** - Automatic Swift code formatting with [SwiftFormat](https://github.com/nicklockwood/SwiftFormat)
 - **Custom Configuration** - Pre-configured formatting rules for consistent code style
 
+### 🤖 Claude Code Integration
+- **Global Configuration** - Custom instructions for Claude Code in `~/.claude/CLAUDE.md`
+- **Custom Agents** - Specialized AI assistants for common tasks:
+  - `git-commit-messages` - Generates well-formatted commit messages
+  - `swift-testing` - Expert in Swift Testing framework and TDD
+  - `swift-docs` - Swift documentation specialist
+
+### 🔤 Fonts
+- **JetBrains Mono Nerd Font** - Programming font with ligatures and icons
+
 ## ⚡ Quick Installation
 
 The installation process is fully automated and will set up everything you need:
@@ -51,17 +61,90 @@ The `install.sh` script automatically handles:
 1. **Homebrew Installation** - Installs Homebrew package manager if not present
 2. **eza Installation** - Modern replacement for `ls` with better formatting and icons
 3. **SwiftFormat Installation** - Installs SwiftFormat for automatic code formatting
-4. **SwiftFormat Configuration** - Copies custom formatting rules to `~/.swiftformat`
-5. **Shell Aliases** - Adds all aliases to your `.zshrc` file
-6. **Script Installation** - Copies custom scripts to `~/Developer/bin/`
-7. **Xcode Integration** - Installs templates and color themes
+4. **JetBrains Mono Nerd Font** - Installs programming font with ligatures and icons
+5. **SwiftFormat Configuration** - Copies custom formatting rules to `~/.swiftformat`
+6. **Claude Code Configuration** - Installs global instructions and custom agents to `~/.claude/`
+7. **Shell Aliases** - Adds all aliases to your `.zshrc` file
+8. **Script Installation** - Copies custom scripts to `~/Developer/bin/`
+9. **Xcode Integration** - Installs templates and color themes
 
 ## 🎯 Usage
 
 ### Installation
+
+#### Install Everything
 ```bash
 ./install.sh
 ```
+
+#### Install Specific Components
+```bash
+# Install only Xcode themes
+./install.sh --only-themes
+
+# Install only development tools and font
+./install.sh --only-tools --only-font
+
+# Install only Claude Code configuration
+./install.sh --only-claude
+
+# Install all Xcode components
+./install.sh --only-xcode
+```
+
+#### Skip Specific Components
+```bash
+# Install everything except Xcode components
+./install.sh --skip-xcode
+
+# Install everything except themes
+./install.sh --skip-themes
+
+# Skip Homebrew installation
+./install.sh --skip-homebrew
+```
+
+#### Available Components
+- `--only-homebrew` / `--skip-homebrew` - Homebrew package manager
+- `--only-tools` / `--skip-tools` - Development tools (eza, SwiftFormat)
+- `--only-font` / `--skip-font` - JetBrains Mono Nerd Font
+- `--only-swiftformat-config` / `--skip-swiftformat-config` - SwiftFormat configuration
+- `--only-aliases` / `--skip-aliases` - Shell aliases
+- `--only-scripts` / `--skip-scripts` - Custom scripts
+- `--only-xcode` / `--skip-xcode` - All Xcode components
+- `--only-themes` / `--skip-themes` - Xcode color themes
+- `--only-templates` / `--skip-templates` - Xcode templates
+- `--only-header` / `--skip-header` - Xcode header template
+- `--only-claude` / `--skip-claude` - Claude Code configuration
+
+#### List Available Components
+```bash
+./install.sh --list
+```
+
+#### Preview Installation (Dry Run)
+```bash
+./install.sh --dry-run
+
+# Preview specific components
+./install.sh --dry-run --only-themes
+```
+
+### Health Check
+```bash
+./health-check.sh
+```
+Verifies that all components are properly installed and configured. The health check will:
+- ✅ Check if all tools are installed (Homebrew, eza, SwiftFormat, fonts)
+- ✅ Verify configuration files exist and are properly configured
+- ✅ Validate Xcode themes, templates, and headers
+- ✅ Check Claude Code configuration and agents
+- ✅ Verify custom scripts are installed and executable
+- ✅ Show version information for installed tools
+- ✅ Detect outdated packages and suggest updates
+- ✅ Provide a health score and recommendations
+
+Run this periodically to ensure your development environment is in good shape!
 
 ### Backup Current Configuration
 ```bash
@@ -169,6 +252,10 @@ This is a personal configuration repository, but suggestions and improvements ar
 **Alfredo Hernández Alarcón**
 - GitHub: [@AlfredoHernandez](https://github.com/AlfredoHernandez)
 - Twitter: [@alfredohdzdev](https://twitter.com/alfredohdzdev)
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 

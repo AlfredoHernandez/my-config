@@ -164,6 +164,23 @@ backup_claude_agents() {
     fi
 }
 
+# Backup Claude Code settings
+backup_claude_settings() {
+    print_status "Backing up Claude Code settings..."
+    local settings_file="$HOME/.claude/settings.json"
+
+    if [[ -f "$settings_file" ]]; then
+        mkdir -p "$DEST/claude"
+        if cp "$settings_file" "$DEST/claude/" 2>/dev/null; then
+            print_success "Backed up settings.json"
+        else
+            print_fail "Failed to copy settings.json"
+        fi
+    else
+        print_skip "No settings.json found"
+    fi
+}
+
 # Print summary
 print_summary() {
     echo ""
@@ -200,5 +217,6 @@ backup_scripts
 backup_aliases
 backup_claude_config
 backup_claude_agents
+backup_claude_settings
 
 print_summary

@@ -654,6 +654,32 @@ install_claude_config() {
     fi
 }
 
+# Function to install Claude Code settings
+install_claude_settings() {
+    print_header "Claude Code Settings"
+    local claude_dir="$HOME/.claude"
+    local settings_src="claude/settings.json"
+
+    if [[ ! -f "$settings_src" ]]; then
+        print_warning "No settings.json found in $settings_src, skipping..."
+        return 0
+    fi
+
+    if [[ -f "$claude_dir/settings.json" ]]; then
+        print_success "Claude Code settings already exists"
+        return 0
+    fi
+
+    if $DRY_RUN; then
+        print_dry_run "Copy claude/settings.json to $claude_dir/settings.json"
+    else
+        print_status "Installing Claude Code settings..."
+        mkdir -p "$claude_dir"
+        cp "$settings_src" "$claude_dir/settings.json"
+        print_success "Claude Code settings installed to $claude_dir/settings.json"
+    fi
+}
+
 # Function to install Claude agents
 install_claude_agents() {
     print_header "Claude Agents Installation"
@@ -767,6 +793,11 @@ fi
 # Install Claude agents
 if should_install "claude" "$INSTALL_CLAUDE" "$SKIP_CLAUDE"; then
     install_claude_agents
+fi
+
+# Install Claude Code settings
+if should_install "claude" "$INSTALL_CLAUDE" "$SKIP_CLAUDE"; then
+    install_claude_settings
 fi
 
 # Install custom scripts

@@ -3,7 +3,8 @@ set -uo pipefail
 
 USER="$(whoami)"
 XC_DIR="/Users/$USER/Library/Developer/Xcode"
-XC_USER_DATA="/Users/$USER/Library/Developer/Xcode/UserData"
+XC_USER_DATA="$XC_DIR/UserData"
+REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # Colors for output
 RED='\033[0;31m'
@@ -14,209 +15,222 @@ WHITE='\033[1;37m'
 NC='\033[0m'
 
 # Counters
-SUCCESS=0
-FAILED=0
-SKIPPED=0
+UPDATED=0
+UP_TO_DATE=0
+MISSING=0
+CHANGES=()
 
-# Create backup directory
-mkdir -p "./backup"
-DEST="./backup"
-
-print_success() {
-    echo -e "${GREEN}[✓]${NC} $1"
-    ((SUCCESS++))
+print_updated() {
+    echo -e "${GREEN}[↑]${NC} $1"
+    ((UPDATED++))
+    CHANGES+=("$1")
 }
 
-print_fail() {
-    echo -e "${RED}[✗]${NC} $1"
-    ((FAILED++))
+print_ok() {
+    echo -e "${CYAN}[✓]${NC} $1"
+    ((UP_TO_DATE++))
 }
 
-print_skip() {
+print_missing() {
     echo -e "${YELLOW}[−]${NC} $1"
-    ((SKIPPED++))
+    ((MISSING++))
 }
 
 print_status() {
     echo -e "${CYAN}[*]${NC} $1"
 }
 
-# Backup Xcode themes
-backup_themes() {
-    print_status "Backing up Xcode themes..."
+# Compare and sync a single file
+# Returns 0 if updated, 1 if up-to-date, 2 if source missing
+sync_file() {
+    local source="$1"
+    local dest="$2"
+    local label="$3"
+
+    if [[ ! -f "$source" ]]; then
+        print_missing "$label (not installed)"
+        return 2
+    fi
+
+    if [[ ! -f "$dest" ]]; then
+        mkdir -p "$(dirname "$dest")"
+        cp "$source" "$dest"
+        print_updated "$label (new file)"
+        return 0
+    fi
+
+    if ! diff -q "$source" "$dest" &>/dev/null; then
+        cp "$source" "$dest"
+        print_updated "$label"
+        return 0
+    fi
+
+    print_ok "$label"
+    return 1
+}
+
+# Compare and sync a directory
+sync_dir() {
+    local source="$1"
+    local dest="$2"
+    local label="$3"
+
+    if [[ ! -d "$source" ]] || [[ -z "$(ls -A "$source" 2>/dev/null)" ]]; then
+        print_missing "$label (not installed)"
+        return 2
+    fi
+
+    local dir_updated=false
+
+    for file in "$source"/*; do
+        local filename
+        filename="$(basename "$file")"
+
+        if [[ -d "$file" ]]; then
+            sync_dir "$file" "$dest/$filename" "$label/$filename"
+            [[ $? -eq 0 ]] && dir_updated=true
+        else
+            sync_file "$file" "$dest/$filename" "$label/$filename"
+            [[ $? -eq 0 ]] && dir_updated=true
+        fi
+    done
+
+    $dir_updated && return 0 || return 1
+}
+
+# Sync Xcode themes
+sync_themes() {
+    print_status "Checking Xcode themes..."
     local theme_dir="$XC_USER_DATA/FontAndColorThemes"
 
     if [[ -d "$theme_dir" ]] && ls "$theme_dir"/*.xccolortheme &>/dev/null; then
-        if cp "$theme_dir"/*.xccolortheme "$DEST" 2>/dev/null; then
-            local count=$(ls "$DEST"/*.xccolortheme 2>/dev/null | wc -l | xargs)
-            print_success "Backed up $count theme(s)"
-        else
-            print_fail "Failed to copy themes"
-        fi
+        for theme in "$theme_dir"/*.xccolortheme; do
+            local name
+            name="$(basename "$theme")"
+            sync_file "$theme" "$REPO_DIR/Themes/$name" "Theme: $name"
+        done
     else
-        print_skip "No themes found to backup"
+        print_missing "No Xcode themes installed"
     fi
 }
 
-# Backup Xcode header template
-backup_header() {
-    print_status "Backing up Xcode header template..."
-    local header_file="$XC_USER_DATA/IDETemplateMacros.plist"
-
-    if [[ -f "$header_file" ]]; then
-        if cp "$header_file" "$DEST" 2>/dev/null; then
-            print_success "Backed up header template"
-        else
-            print_fail "Failed to copy header template"
-        fi
-    else
-        print_skip "No header template found"
-    fi
+# Sync Xcode header template
+sync_header() {
+    print_status "Checking Xcode header template..."
+    sync_file "$XC_USER_DATA/IDETemplateMacros.plist" "$REPO_DIR/Headers/IDETemplateMacros.plist" "Header template"
 }
 
-# Backup Xcode templates
-backup_templates() {
-    print_status "Backing up Xcode templates..."
+# Sync Xcode templates
+sync_templates() {
+    print_status "Checking Xcode templates..."
     local templates_dir="$XC_DIR/Templates"
-
-    if [[ -d "$templates_dir" ]] && [[ -n "$(ls -A "$templates_dir" 2>/dev/null)" ]]; then
-        if cp -r "$templates_dir" "$DEST" 2>/dev/null; then
-            print_success "Backed up Xcode templates"
-        else
-            print_fail "Failed to copy templates"
-        fi
-    else
-        print_skip "No templates found to backup"
-    fi
+    sync_dir "$templates_dir" "$REPO_DIR/Templates" "Templates"
 }
 
-# Backup custom scripts
-backup_scripts() {
-    print_status "Backing up custom scripts..."
+# Sync custom scripts
+sync_scripts() {
+    print_status "Checking custom scripts..."
     local scripts_dir="$HOME/Developer/bin"
 
     if [[ -d "$scripts_dir" ]] && ls "$scripts_dir"/*.sh &>/dev/null; then
-        mkdir -p "$DEST/scripts"
-        if cp "$scripts_dir"/*.sh "$DEST/scripts/" 2>/dev/null; then
-            local count=$(ls "$DEST/scripts"/*.sh 2>/dev/null | wc -l | xargs)
-            print_success "Backed up $count script(s)"
-        else
-            print_fail "Failed to copy scripts"
-        fi
+        for script in "$scripts_dir"/*.sh; do
+            local name
+            name="$(basename "$script")"
+            sync_file "$script" "$REPO_DIR/scripts/$name" "Script: $name"
+        done
     else
-        print_skip "No custom scripts found"
+        print_missing "No custom scripts installed"
     fi
 }
 
-# Backup .zshrc aliases
-backup_aliases() {
-    print_status "Backing up .zshrc aliases..."
+# Sync .zshrc aliases
+sync_aliases() {
+    print_status "Checking .zshrc aliases..."
     local zshrc="$HOME/.zshrc"
+    local dest="$REPO_DIR/scripts/aliases.txt"
 
     if [[ -f "$zshrc" ]] && grep -q "# Git aliases" "$zshrc" 2>/dev/null; then
-        if awk '/^# Git aliases/,/^alias dl=/' "$zshrc" > "$DEST/aliases_backup.txt" 2>/dev/null; then
-            if [[ -s "$DEST/aliases_backup.txt" ]]; then
-                print_success "Backed up aliases"
+        local tmp
+        tmp="$(mktemp)"
+        awk '/^# Git aliases/,/^alias dl=/' "$zshrc" > "$tmp" 2>/dev/null
+
+        if [[ -s "$tmp" ]]; then
+            if [[ ! -f "$dest" ]] || ! diff -q "$tmp" "$dest" &>/dev/null; then
+                cp "$tmp" "$dest"
+                print_updated "Aliases"
+                CHANGES+=("Aliases")
             else
-                rm -f "$DEST/aliases_backup.txt"
-                print_fail "Failed to extract aliases"
+                print_ok "Aliases"
             fi
         else
-            print_fail "Failed to backup aliases"
+            print_missing "No aliases section found in .zshrc"
         fi
+        rm -f "$tmp"
     else
-        print_skip "No aliases section found in .zshrc"
+        print_missing "No aliases section found in .zshrc"
     fi
 }
 
-# Backup Claude Code configuration
-backup_claude_config() {
-    print_status "Backing up Claude Code configuration..."
-    local claude_config="$HOME/.claude/CLAUDE.md"
+# Sync Claude Code configuration
+sync_claude() {
+    print_status "Checking Claude Code configuration..."
+    sync_file "$HOME/.claude/CLAUDE.md" "$REPO_DIR/claude/CLAUDE.md" "Claude: CLAUDE.md"
+    sync_file "$HOME/.claude/settings.json" "$REPO_DIR/claude/settings.json" "Claude: settings.json"
 
-    if [[ -f "$claude_config" ]]; then
-        mkdir -p "$DEST/claude"
-        if cp "$claude_config" "$DEST/claude/" 2>/dev/null; then
-            print_success "Backed up CLAUDE.md"
-        else
-            print_fail "Failed to copy CLAUDE.md"
-        fi
-    else
-        print_skip "No CLAUDE.md found"
-    fi
-}
-
-# Backup Claude agents
-backup_claude_agents() {
-    print_status "Backing up Claude agents..."
+    # Sync agents
     local agents_dir="$HOME/.claude/agents"
-
     if [[ -d "$agents_dir" ]] && [[ -n "$(ls -A "$agents_dir" 2>/dev/null)" ]]; then
-        mkdir -p "$DEST/claude/agents"
-        if cp -r "$agents_dir"/* "$DEST/claude/agents/" 2>/dev/null; then
-            local count=$(ls "$DEST/claude/agents"/*.md 2>/dev/null | wc -l | xargs)
-            print_success "Backed up $count agent(s)"
-        else
-            print_fail "Failed to copy agents"
-        fi
+        for agent in "$agents_dir"/*.md; do
+            local name
+            name="$(basename "$agent")"
+            sync_file "$agent" "$REPO_DIR/claude/agents/$name" "Claude agent: $name"
+        done
     else
-        print_skip "No agents found"
+        print_missing "No Claude agents installed"
     fi
 }
 
-# Backup Claude Code settings
-backup_claude_settings() {
-    print_status "Backing up Claude Code settings..."
-    local settings_file="$HOME/.claude/settings.json"
-
-    if [[ -f "$settings_file" ]]; then
-        mkdir -p "$DEST/claude"
-        if cp "$settings_file" "$DEST/claude/" 2>/dev/null; then
-            print_success "Backed up settings.json"
-        else
-            print_fail "Failed to copy settings.json"
-        fi
-    else
-        print_skip "No settings.json found"
-    fi
+# Sync SwiftFormat configuration
+sync_swiftformat() {
+    print_status "Checking SwiftFormat configuration..."
+    sync_file "$HOME/.swiftformat" "$REPO_DIR/scripts/.swiftformat" "SwiftFormat config"
 }
 
-# Print summary
+# Print summary and suggest commit
 print_summary() {
     echo ""
     echo -e "${WHITE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo -e "${WHITE}Backup Summary${NC}"
     echo -e "${WHITE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "  ${GREEN}✓ Successful:${NC} $SUCCESS"
-    echo -e "  ${RED}✗ Failed:${NC}     $FAILED"
-    echo -e "  ${YELLOW}− Skipped:${NC}    $SKIPPED"
+    echo -e "  ${GREEN}↑ Updated:${NC}    $UPDATED"
+    echo -e "  ${CYAN}✓ Up to date:${NC} $UP_TO_DATE"
+    echo -e "  ${YELLOW}− Missing:${NC}    $MISSING"
     echo -e "${WHITE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "  ${CYAN}Backup location:${NC} $DEST"
     echo ""
 
-    if [[ $FAILED -eq 0 ]]; then
-        echo -e "${GREEN}Backup completed successfully!${NC}"
-        return 0
+    if [[ $UPDATED -gt 0 ]]; then
+        echo -e "${GREEN}Configuration updated!${NC} Run the following to save your changes:"
+        echo ""
+        echo -e "  ${WHITE}git add -A && git commit -m \"Update configuration backup\" && git push${NC}"
+        echo ""
     else
-        echo -e "${YELLOW}Backup completed with $FAILED failure(s)${NC}"
-        return 1
+        echo -e "${CYAN}Everything is up to date. No changes needed.${NC}"
     fi
 }
 
 # Main execution
 echo -e "${WHITE}"
 echo "╔════════════════════════════════════════════════════╗"
-echo "║          📦 Configuration Backup Script            ║"
+echo "║          🔄 Configuration Sync Script              ║"
 echo "╚════════════════════════════════════════════════════╝"
 echo -e "${NC}"
 
-backup_themes
-backup_header
-backup_templates
-backup_scripts
-backup_aliases
-backup_claude_config
-backup_claude_agents
-backup_claude_settings
+sync_themes
+sync_header
+sync_templates
+sync_scripts
+sync_aliases
+sync_claude
+sync_swiftformat
 
 print_summary

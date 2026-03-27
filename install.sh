@@ -788,10 +788,9 @@ fi
 # Xcode themes
 if should_install "themes" "$INSTALL_THEMES" "$SKIP_THEMES"; then
     print_header "Xcode Themes Installation"
-    local themes_dest="$XC_USER_DATA/FontAndColorThemes"
+    themes_dest="$XC_USER_DATA/FontAndColorThemes"
     mkdir -p "$themes_dest"
     for theme in Themes/*.xccolortheme; do
-        local name
         name="$(basename "$theme")"
         install_or_update_file "$theme" "$themes_dest/$name" "Theme: $name"
     done

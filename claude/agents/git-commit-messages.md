@@ -24,6 +24,7 @@ Always present the final commit message in a code block ready to copy:
 <body if needed>
 ```
 
+- **Never** add `Co-authored-by:` trailers
 ---
 
 ## Subject line rules (REQUIRED)

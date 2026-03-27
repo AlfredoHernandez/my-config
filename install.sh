@@ -313,6 +313,66 @@ print_fail() {
     echo -e "${RED}[✗]${NC} $1"
 }
 
+print_updated() {
+    echo -e "${GREEN}[↑]${NC} $1"
+}
+
+# Helper: install or update a single file
+install_or_update_file() {
+    local src="$1"
+    local dest="$2"
+    local label="$3"
+
+    if [[ ! -f "$src" ]]; then
+        print_warning "$label source not found: $src"
+        return 1
+    fi
+
+    if [[ -f "$dest" ]]; then
+        if diff -q "$src" "$dest" &>/dev/null; then
+            print_success "$label already up to date"
+            return 0
+        fi
+        if $DRY_RUN; then
+            print_dry_run "Update $label"
+        else
+            cp "$src" "$dest"
+            print_updated "$label updated"
+        fi
+    else
+        if $DRY_RUN; then
+            print_dry_run "Install $label"
+        else
+            mkdir -p "$(dirname "$dest")"
+            cp "$src" "$dest"
+            print_success "$label installed"
+        fi
+    fi
+}
+
+# Helper: install or update a directory
+install_or_update_dir() {
+    local src="$1"
+    local dest="$2"
+    local label="$3"
+
+    if [[ ! -d "$src" ]]; then
+        print_warning "$label source not found: $src"
+        return 1
+    fi
+
+    mkdir -p "$dest"
+    for file in "$src"/*; do
+        local name
+        name="$(basename "$file")"
+        if [[ -d "$file" ]]; then
+            install_or_update_dir "$file" "$dest/$name" "$label/$name"
+        else
+            install_or_update_file "$file" "$dest/$name" "$label: $name"
+        fi
+    done
+}
+
 # Validate system prerequisites
 validate_prerequisites() {
     echo -e "${WHITE}"
@@ -580,55 +640,30 @@ install_jetbrains_mono_nerd_font() {
 # Function to install SwiftFormat configuration
 install_swiftformat_config() {
     print_header "SwiftFormat Configuration"
-    if $DRY_RUN; then
-        print_dry_run "Copy scripts/.swiftformat to ~/.swiftformat"
-    else
-        print_status "Installing SwiftFormat configuration..."
-        cp scripts/.swiftformat ~/.swiftformat
-        print_success "SwiftFormat configuration installed to ~/.swiftformat"
-    fi
+    install_or_update_file "config/swiftformat.txt" "$HOME/.swiftformat" "SwiftFormat configuration"
 }
 
 # Function to add aliases to .zshrc
 add_aliases_to_zshrc() {
     local zshrc_file="$HOME/.zshrc"
-    local aliases_section="
-# Git aliases
-alias gl='git pull'
-alias gd='git diff'
-alias gp='git push'
-alias gst='git status'
-alias ga='git add .'
-alias gc='git commit'
-alias gca='git commit --amend --no-edit'
-alias glog='git log'
-alias gcp='git cherry-pick'
-alias cleanup='git branch --merged | grep -Ev \"(^\*|master|main|develop)\" | xargs git branch -d'
-alias grh='git reset --soft HEAD~1'
+    local aliases_src="config/aliases.zsh"
+    local source_line="source \"$HOME/.config/aliases.zsh\""
 
-# Xcode aliases
-alias spm='xcodebuild -resolvePackageDependencies -scmProvider system'
+    # Install aliases file
+    install_or_update_file "$aliases_src" "$HOME/.config/aliases.zsh" "Aliases file"
 
-# ls improvements with eza
-alias ls='eza --grid --color auto --icons --sort=type'
-alias ll='eza --long --color always --icons --sort=type'
-alias la='eza --grid --all --color auto --icons --sort=type'
-alias lla='eza --long --all --color auto --icons --sort=type'
-
-# Custom scripts
-alias dl=\"~/Developer/bin/deeplink.sh\"
-"
-
-    # Check if aliases section already exists
-    if grep -q "# Git aliases" "$zshrc_file" 2>/dev/null; then
-        print_success "Aliases already exist in .zshrc"
+    # Add source line to .zshrc if not present
+    if grep -q "source.*aliases.zsh" "$zshrc_file" 2>/dev/null; then
+        print_success "Aliases already sourced in .zshrc"
     else
         if $DRY_RUN; then
-            print_dry_run "Add shell aliases to $zshrc_file"
+            print_dry_run "Add source line for aliases to $zshrc_file"
         else
-            print_status "Adding aliases to .zshrc"
-            echo "$aliases_section" >> "$zshrc_file"
-            print_success "Aliases added successfully"
+            print_status "Adding aliases source to .zshrc"
+            echo "" >> "$zshrc_file"
+            echo "# My config aliases" >> "$zshrc_file"
+            echo "$source_line" >> "$zshrc_file"
+            print_success "Aliases source added to .zshrc"
         fi
     fi
 }
@@ -636,100 +671,33 @@ alias dl=\"~/Developer/bin/deeplink.sh\"
 # Function to install Claude Code configuration
 install_claude_config() {
     print_header "Claude Code Configuration"
-    local claude_dir="$HOME/.claude"
-
-    if [[ -f "$claude_dir/CLAUDE.md" ]]; then
-        print_success "Claude Code configuration already exists"
-        return 0
-    fi
-
-    if $DRY_RUN; then
-        print_dry_run "Create directory $claude_dir"
-        print_dry_run "Copy claude/CLAUDE.md to $claude_dir/CLAUDE.md"
-    else
-        print_status "Installing Claude Code configuration..."
-        mkdir -p "$claude_dir"
-        cp claude/CLAUDE.md "$claude_dir/CLAUDE.md"
-        print_success "Claude Code configuration installed to $claude_dir/CLAUDE.md"
-    fi
+    install_or_update_file "claude/CLAUDE.md" "$HOME/.claude/CLAUDE.md" "CLAUDE.md"
 }
 
 # Function to install Claude Code settings
 install_claude_settings() {
     print_header "Claude Code Settings"
-    local claude_dir="$HOME/.claude"
-    local settings_src="claude/settings.json"
-
-    if [[ ! -f "$settings_src" ]]; then
-        print_warning "No settings.json found in $settings_src, skipping..."
-        return 0
-    fi
-
-    if [[ -f "$claude_dir/settings.json" ]]; then
-        print_success "Claude Code settings already exists"
-        return 0
-    fi
-
-    if $DRY_RUN; then
-        print_dry_run "Copy claude/settings.json to $claude_dir/settings.json"
-    else
-        print_status "Installing Claude Code settings..."
-        mkdir -p "$claude_dir"
-        cp "$settings_src" "$claude_dir/settings.json"
-        print_success "Claude Code settings installed to $claude_dir/settings.json"
-    fi
+    install_or_update_file "claude/settings.json" "$HOME/.claude/settings.json" "Claude settings"
 }
 
 # Function to install Claude agents
 install_claude_agents() {
     print_header "Claude Agents Installation"
-    local agents_src="claude/agents"
-    local agents_dest="$HOME/.claude/agents"
-
-    if [[ ! -d "$agents_src" ]]; then
-        print_warning "No agents directory found in $agents_src, skipping..."
-        return 0
-    fi
-
-    if [[ -d "$agents_dest" ]] && [[ -n "$(ls -A "$agents_dest" 2>/dev/null)" ]]; then
-        print_success "Claude agents already installed"
-        return 0
-    fi
-
-    if $DRY_RUN; then
-        print_dry_run "Create directory $agents_dest"
-        print_dry_run "Copy $agents_src/ to $agents_dest/"
-    else
-        print_status "Installing Claude agents..."
-        mkdir -p "$agents_dest"
-        cp -r "$agents_src"/* "$agents_dest/" 2>/dev/null || {
-            print_warning "No agents found to install"
-            return 0
-        }
-        print_success "Claude agents installed to $agents_dest"
-    fi
+    install_or_update_dir "claude/agents" "$HOME/.claude/agents" "Agent"
 }
 
 # Function to install custom scripts
 install_custom_scripts() {
     print_header "Custom Scripts Installation"
     local bin_dir="$HOME/Developer/bin"
+    mkdir -p "$bin_dir"
 
-    if [[ -f "$bin_dir/deeplink.sh" ]]; then
-        print_success "Custom scripts already installed"
-        return 0
-    fi
-
-    if $DRY_RUN; then
-        print_dry_run "Create directory $bin_dir"
-        print_dry_run "Copy scripts/deeplink.sh to $bin_dir/"
-    else
-        print_status "Installing custom scripts to $bin_dir"
-        mkdir -p "$bin_dir"
-        cp scripts/deeplink.sh "$bin_dir/"
-        chmod +x "$bin_dir/deeplink.sh"
-        print_success "Custom scripts installed successfully"
-    fi
+    for script in scripts/*.sh; do
+        local name
+        name="$(basename "$script")"
+        install_or_update_file "$script" "$bin_dir/$name" "Script: $name"
+        $DRY_RUN || chmod +x "$bin_dir/$name"
+    done
 }
 
 # Main installation process
@@ -814,52 +782,24 @@ fi
 # XCode templates
 if should_install "templates" "$INSTALL_TEMPLATES" "$SKIP_TEMPLATES"; then
     print_header "Xcode Templates Installation"
-    XC_TEMPLATES_DIR="$XC_DIR/Templates"
-
-    if [[ -d "$XC_TEMPLATES_DIR" ]] && [[ -n "$(ls -A "$XC_TEMPLATES_DIR" 2>/dev/null)" ]]; then
-        print_success "Xcode templates already installed"
-    elif $DRY_RUN; then
-        print_dry_run "Create directory $XC_TEMPLATES_DIR"
-        print_dry_run "Copy Templates/ to $XC_TEMPLATES_DIR"
-    else
-        print_status "Installing Xcode templates..."
-        mkdir -p "$XC_TEMPLATES_DIR"
-        cp -r Templates/ "$XC_TEMPLATES_DIR"
-        print_success "Xcode templates installed successfully"
-    fi
+    install_or_update_dir "Templates" "$XC_DIR/Templates" "Template"
 fi
 
 # Xcode themes
 if should_install "themes" "$INSTALL_THEMES" "$SKIP_THEMES"; then
     print_header "Xcode Themes Installation"
-    THEMES_DIR="$XC_USER_DATA/FontAndColorThemes/"
-
-    if [[ -d "$THEMES_DIR" ]] && ls "$THEMES_DIR"/*.xccolortheme &>/dev/null; then
-        print_success "Xcode themes already installed"
-    elif $DRY_RUN; then
-        print_dry_run "Create directory $THEMES_DIR"
-        print_dry_run "Copy Themes/*.xccolortheme to $THEMES_DIR"
-    else
-        print_status "Installing Xcode color themes..."
-        mkdir -p "$THEMES_DIR"
-        cp Themes/*.xccolortheme "$THEMES_DIR"
-        print_success "Xcode themes installed successfully"
-    fi
+    themes_dest="$XC_USER_DATA/FontAndColorThemes"
+    mkdir -p "$themes_dest"
+    for theme in Themes/*.xccolortheme; do
+        name="$(basename "$theme")"
+        install_or_update_file "$theme" "$themes_dest/$name" "Theme: $name"
+    done
 fi
 
 # Xcode Header
 if should_install "header" "$INSTALL_HEADER" "$SKIP_HEADER"; then
     print_header "Xcode Header Template"
-
-    if [[ -f "$XC_USER_DATA/IDETemplateMacros.plist" ]]; then
-        print_success "Xcode header template already installed"
-    elif $DRY_RUN; then
-        print_dry_run "Copy Headers/IDETemplateMacros.plist to $XC_USER_DATA"
-    else
-        print_status "Installing header template..."
-        cp ./Headers/IDETemplateMacros.plist "$XC_USER_DATA"
-        print_success "Xcode header template installed successfully"
-    fi
+    install_or_update_file "Headers/IDETemplateMacros.plist" "$XC_USER_DATA/IDETemplateMacros.plist" "Header template"
 fi
 
 # Final message

@@ -188,7 +188,7 @@ update_config() {
     print_header "Configuration Files"
 
     # SwiftFormat config
-    local swiftformat_src="$SCRIPT_DIR/scripts/.swiftformat"
+    local swiftformat_src="$SCRIPT_DIR/config/swiftformat.txt"
     local swiftformat_dest="$HOME/.swiftformat"
 
     if [[ -f "$swiftformat_src" ]]; then

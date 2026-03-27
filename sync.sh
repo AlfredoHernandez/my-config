@@ -145,9 +145,9 @@ sync_scripts() {
 
 # Sync .zshrc aliases
 sync_aliases() {
-    print_status "Checking .zshrc aliases..."
+    print_status "Checking aliases..."
     local zshrc="$HOME/.zshrc"
-    local dest="$REPO_DIR/scripts/aliases.txt"
+    local dest="$REPO_DIR/config/aliases.zsh"
 
     if [[ -f "$zshrc" ]] && grep -q "# Git aliases" "$zshrc" 2>/dev/null; then
         local tmp
@@ -155,10 +155,9 @@ sync_aliases() {
         awk '/^# Git aliases/,/^alias dl=/' "$zshrc" > "$tmp" 2>/dev/null
 
         if [[ -s "$tmp" ]]; then
-            if [[ ! -f "$dest" ]] || ! diff -q "$tmp" "$dest" &>/dev/null; then
+            if ! diff -q "$tmp" "$dest" &>/dev/null; then
                 cp "$tmp" "$dest"
                 print_updated "Aliases"
-                CHANGES+=("Aliases")
             else
                 print_ok "Aliases"
             fi
@@ -193,7 +192,7 @@ sync_claude() {
 # Sync SwiftFormat configuration
 sync_swiftformat() {
     print_status "Checking SwiftFormat configuration..."
-    sync_file "$HOME/.swiftformat" "$REPO_DIR/scripts/.swiftformat" "SwiftFormat config"
+    sync_file "$HOME/.swiftformat" "$REPO_DIR/config/swiftformat.txt" "SwiftFormat config"
 }
 
 # Print summary and suggest commit

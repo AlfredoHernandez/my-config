@@ -64,11 +64,15 @@ Fixes #123
 ```
 my-config/
 ├── install.sh           # Main installation script
-├── backup.sh            # Backup existing configurations
+├── sync.sh              # Sync installed config back to repo
 ├── health-check.sh      # Verify installation status
+├── config/              # Configuration files
+│   ├── aliases.zsh      # Shell aliases
+│   └── swiftformat.txt  # SwiftFormat configuration
 ├── scripts/             # Custom utility scripts
 ├── claude/              # Claude Code configuration
 │   ├── CLAUDE.md        # Global instructions
+│   ├── settings.json    # Claude Code settings
 │   └── agents/          # Custom AI agents
 ├── Themes/              # Xcode color themes
 ├── Templates/           # Xcode file templates

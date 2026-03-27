@@ -146,10 +146,11 @@ Verifies that all components are properly installed and configured. The health c
 
 Run this periodically to ensure your development environment is in good shape!
 
-### Backup Current Configuration
+### Sync Configuration
 ```bash
-./backup.sh
+./sync.sh
 ```
+Compares installed files against the repo and updates the repo with any changes. If updates are found, suggests a commit and push.
 
 ## 📚 Available Aliases
 

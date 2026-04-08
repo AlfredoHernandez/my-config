@@ -65,27 +65,46 @@ Analyze the code against each category below. Only report findings that are **ac
 - Insecure deserialization — untrusted data deserialized without validation
 - Overly permissive CORS, authentication, or authorization checks
 
-### 8. Performance
+### 8. Logging & Observability
+- Critical operations without logging (payments, auth, state transitions) — impossible to debug in production
+- Excessive logging or wrong severity levels (debug info at error level, logs inside hot loops)
+- Log messages without useful context — missing IDs, timestamps, or correlation IDs
+- Missing metrics or tracing at system entry/exit points
+
+### 9. Performance
 - Heavy work on the UI/main thread that should be offloaded to a background thread
 - Unnecessary re-renders or recomputations (missing identity optimizations, wrong observation scope)
 - N+1 queries or repeated expensive operations in loops
 - Memory leaks — unclosed resources, retained references in callbacks/closures, unremoved observers or subscriptions
 - Missing pagination for lists that could grow unbounded
 
-### 9. Concurrency & Thread Safety
+### 10. Edge Cases & Boundary Conditions
+- Empty collections not handled — code that assumes at least one element
+- Off-by-one errors in indices, ranges, or pagination
+- Extreme values not considered — empty strings, negative numbers, integer overflow
+- Time-related race conditions — clocks, timeouts, token expiration
+- Non-idempotent operations that should be idempotent (retries, webhooks)
+
+### 11. Resource Management
+- Connections, file handles, sockets, or streams not closed (missing close/dispose/finally)
+- Connection pools without limits or timeouts
+- Database transactions not closed in all paths (especially error paths)
+- Resources acquired in inconsistent order (potential deadlock)
+
+### 12. Concurrency & Thread Safety
 - Data races — mutable shared state accessed from multiple threads or coroutines
 - Missing main/UI-thread dispatch for code that updates the interface
 - Blocking the main/UI thread with synchronous work
 - Cancellation not handled for async operations
 
-### 10. Consistency with Existing Codebase
+### 13. Consistency with Existing Codebase
 - Search for similar features/modules already implemented in the project to understand established patterns
 - Compare how the reviewed code handles the same concerns (navigation, error handling, data loading, composition) vs existing implementations
 - If the reviewed code deviates from an established pattern, flag it — either align with the existing standard or explain why the deviation is better
 - If an existing pattern is itself suboptimal, propose a better solution and suggest applying it across the codebase (not just the reviewed code)
 - Check naming conventions, file organization, and architectural layering match what the rest of the project does
 
-### 11. Testability & Test Coverage
+### 14. Testability & Test Coverage
 - Untestable code — hard dependencies, singletons, static calls that can't be stubbed
 - **Missing tests for new or changed business logic** — if critical logic lacks tests, flag it and propose what tests to add
 - **Propose structural changes for testability** — if code needs interfaces/abstractions, dependency injection, or extraction to become testable, describe the refactor needed
@@ -94,30 +113,30 @@ Analyze the code against each category below. Only report findings that are **ac
 - **Do not flag test doubles for thread safety** — stubs, spies, and mocks run in a controlled test environment where execution order is deterministic. Adding synchronization primitives to test doubles adds noise without value. Only flag thread safety in test doubles if the test explicitly exercises concurrent behavior (e.g., testing concurrent data structures)
 - Verify that existing tests still cover the changed code — refactors can silently orphan test coverage
 
-### 12. Function Parameters
+### 15. Function Parameters
 - Functions with too many parameters — group related parameters into structs/data classes
 - Unused parameters — parameters that are accepted but never read
 - Boolean parameters that could be enums for clarity
 - Parameters passed through multiple layers unchanged — consider if the intermediary is necessary
 - **Default parameter values that hide dependencies** — analyze each case: defaults that mask injectable dependencies (e.g., `currentDate: () -> Date = { Date() }`) are problematic at composition boundaries because callers can silently skip injection, leading to untestable code. However, defaults are appropriate for: convenience constructors within the same layer, optional configuration (e.g., `animated = true`), or parameters with a single sensible value in 90%+ of call sites. The rule is not "never use defaults" but "don't let defaults hide decisions that the caller should make explicitly"
 
-### 13. Deprecated APIs
+### 16. Deprecated APIs
 - Usage of deprecated platform APIs — identify and propose modern replacements
 - Internal deprecated code still being called — remove or migrate callers
 - Third-party SDK deprecated methods — flag before they break on the next SDK update
 
-### 14. API Contract & Public Interface
+### 17. API Contract & Public Interface
 - Access control too permissive — public types, functions, or fields that should be internal/private
 - APIs that expose implementation details (concrete types, internal data structures, framework-specific objects)
 - Breaking changes to public interfaces without justification or migration path
 - Leaky abstractions — callers forced to understand internal behavior to use the API correctly
 
-### 15. File Organization
+### 18. File Organization
 - Multiple top-level types (classes, enums, interfaces, structs) in a single file — each should have its own file
 - Exception: types used only within one file should stay as private nested types
 - Intermediary types that only forward calls without adding value — eliminate the passthrough
 
-### 16. Refactoring Opportunities
+### 19. Refactoring Opportunities
 - Extract Method — long functions that do multiple things
 - Extract Component — views with repeated sub-view patterns
 - Replace Conditional with Polymorphism — switch/when statements that grow with new cases

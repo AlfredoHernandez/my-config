@@ -53,31 +53,39 @@ Analyze the code against each category below. Only report findings that are **ac
 - Mixed abstraction levels within a single function
 
 ### 6. Error Handling
-- Silent failures — empty catch blocks, ignored results, force unwraps or unchecked nulls in production code
+- Silent failures — empty catch blocks, ignored results, unchecked nulls or unsafe forced conversions in production code
 - Missing error propagation — errors swallowed that should reach the user
 - Inconsistent error handling patterns across similar operations
 
-### 7. Performance
-- Heavy work on the UI thread that should be offloaded to a background thread
-- Unnecessary UI re-renders or recompositions (missing identity optimizations, wrong observation scope)
+### 7. Security
+- Hardcoded secrets, API keys, tokens, or credentials in source code
+- Sensitive data stored insecurely (plain text config, unencrypted local storage, cookies without secure flags)
+- Missing input validation — SQL injection, XSS, command injection, path traversal
+- Sensitive information leaked through logs, error messages, or stack traces in production
+- Insecure deserialization — untrusted data deserialized without validation
+- Overly permissive CORS, authentication, or authorization checks
+
+### 8. Performance
+- Heavy work on the UI/main thread that should be offloaded to a background thread
+- Unnecessary re-renders or recomputations (missing identity optimizations, wrong observation scope)
 - N+1 queries or repeated expensive operations in loops
-- Large allocations or retain cycles (closures/lambdas capturing references without proper weak handling)
+- Memory leaks — unclosed resources, retained references in callbacks/closures, unremoved observers or subscriptions
 - Missing pagination for lists that could grow unbounded
 
-### 8. Concurrency & Thread Safety
+### 9. Concurrency & Thread Safety
 - Data races — mutable shared state accessed from multiple threads or coroutines
-- Missing UI-thread annotations on code that updates the interface
+- Missing main/UI-thread dispatch for code that updates the interface
 - Blocking the main/UI thread with synchronous work
 - Cancellation not handled for async operations
 
-### 9. Consistency with Existing Codebase
+### 10. Consistency with Existing Codebase
 - Search for similar features/modules already implemented in the project to understand established patterns
 - Compare how the reviewed code handles the same concerns (navigation, error handling, data loading, composition) vs existing implementations
 - If the reviewed code deviates from an established pattern, flag it — either align with the existing standard or explain why the deviation is better
 - If an existing pattern is itself suboptimal, propose a better solution and suggest applying it across the codebase (not just the reviewed code)
 - Check naming conventions, file organization, and architectural layering match what the rest of the project does
 
-### 10. Testability & Test Coverage
+### 11. Testability & Test Coverage
 - Untestable code — hard dependencies, singletons, static calls that can't be stubbed
 - **Missing tests for new or changed business logic** — if critical logic lacks tests, flag it and propose what tests to add
 - **Propose structural changes for testability** — if code needs protocols, dependency injection, or interface extraction to become testable, describe the refactor needed
@@ -86,24 +94,30 @@ Analyze the code against each category below. Only report findings that are **ac
 - **Do not flag test doubles for thread safety** — stubs, spies, and mocks run in a controlled test environment where execution order is deterministic. Adding locks or actors to test doubles adds noise without value. Only flag thread safety in test doubles if the test explicitly exercises concurrent behavior (e.g., testing a concurrent queue or actor)
 - Verify that existing tests still cover the changed code — refactors can silently orphan test coverage
 
-### 11. Function Parameters
+### 12. Function Parameters
 - Functions with too many parameters — group related parameters into structs/data classes
 - Unused parameters — parameters that are accepted but never read
 - Boolean parameters that could be enums for clarity
 - Parameters passed through multiple layers unchanged — consider if the intermediary is necessary
-- **Default parameter values that hide dependencies** — analyze each case: defaults that mask injectable dependencies (e.g., `currentDate: () -> Date = { Date() }`) are problematic at composition boundaries because callers can silently skip injection, leading to untestable code. However, defaults are appropriate for: convenience initializers within the same layer, optional configuration (e.g., `animated: Bool = true`), or parameters with a single sensible value in 90%+ of call sites. The rule is not "never use defaults" but "don't let defaults hide decisions that the caller should make explicitly"
+- **Default parameter values that hide dependencies** — analyze each case: defaults that mask injectable dependencies (e.g., `currentDate: () -> Date = { Date() }`) are problematic at composition boundaries because callers can silently skip injection, leading to untestable code. However, defaults are appropriate for: convenience constructors within the same layer, optional configuration (e.g., `animated = true`), or parameters with a single sensible value in 90%+ of call sites. The rule is not "never use defaults" but "don't let defaults hide decisions that the caller should make explicitly"
 
-### 12. Deprecated APIs
+### 13. Deprecated APIs
 - Usage of deprecated platform APIs — identify and propose modern replacements
 - Internal deprecated code still being called — remove or migrate callers
 - Third-party SDK deprecated methods — flag before they break on the next SDK update
 
-### 13. File Organization
-- Multiple top-level types (classes, enums, protocols, structs) in a single file — each should have its own file
-- Exception: types used only within one file should stay as `private` nested types
+### 14. API Contract & Public Interface
+- Access control too permissive — public types, functions, or fields that should be internal/private
+- APIs that expose implementation details (concrete types, internal data structures, framework-specific objects)
+- Breaking changes to public interfaces without justification or migration path
+- Leaky abstractions — callers forced to understand internal behavior to use the API correctly
+
+### 15. File Organization
+- Multiple top-level types (classes, enums, interfaces, structs) in a single file — each should have its own file
+- Exception: types used only within one file should stay as private nested types
 - Intermediary types that only forward calls without adding value — eliminate the passthrough
 
-### 14. Refactoring Opportunities
+### 16. Refactoring Opportunities
 - Extract Method — long functions that do multiple things
 - Extract Component — views with repeated sub-view patterns
 - Replace Conditional with Polymorphism — switch/when statements that grow with new cases
@@ -122,13 +136,13 @@ Structure your review as:
 [1-2 sentences: overall assessment and most important finding]
 
 ### Critical (must fix)
-[Issues that cause bugs, data loss, crashes, or security vulnerabilities]
+[Crashes, data loss, security vulnerabilities, state corruption, or data races]
 
 ### Important (should fix)
-[Architecture violations, significant duplication, maintainability concerns]
+[Architecture violations, significant duplication, tech debt, maintainability degradation, missing tests for critical logic]
 
 ### Suggestions (nice to have)
-[Minor improvements, style consistency, small refactoring opportunities]
+[Incremental improvements, minor refactoring opportunities — not merge-blocking]
 
 ### Positive Observations
 [1-2 things done well — acknowledge good patterns to reinforce them]

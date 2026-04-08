@@ -21,7 +21,7 @@ When invoked, determine what to review:
 Analyze the code against each category below. Only report findings that are **actionable and impactful** — skip categories with no issues.
 
 ### 1. Dead Code
-- Unused imports, functions, properties, parameters, protocols, or types
+- Unused imports, functions, properties, parameters, interfaces/protocols, or types
 - Commented-out code that should be deleted
 - Feature flags that are always on/off
 - Unreachable branches or impossible conditions
@@ -36,11 +36,11 @@ Analyze the code against each category below. Only report findings that are **ac
 - Domain logic leaking into views or infrastructure
 - Views doing business logic instead of delegating to view models/use cases
 - Infrastructure details (networking, databases, third-party SDKs) referenced outside their layer
-- Missing abstraction boundaries — concrete types where protocols should be used
+- Missing abstraction boundaries — concrete types where interfaces/abstractions should be used
 - Circular dependencies between modules
 
 ### 4. SOLID Principles
-- **S**: Classes/structs doing too many things — look for views with business logic, god objects
+- **S**: Classes doing too many things — look for views with business logic, god objects
 - **O**: Code that requires modification (not extension) to add new behavior
 - **I**: Fat protocols/interfaces that force unnecessary conformance
 - **D**: High-level modules depending on concrete low-level implementations
@@ -88,10 +88,10 @@ Analyze the code against each category below. Only report findings that are **ac
 ### 11. Testability & Test Coverage
 - Untestable code — hard dependencies, singletons, static calls that can't be stubbed
 - **Missing tests for new or changed business logic** — if critical logic lacks tests, flag it and propose what tests to add
-- **Propose structural changes for testability** — if code needs protocols, dependency injection, or interface extraction to become testable, describe the refactor needed
+- **Propose structural changes for testability** — if code needs interfaces/abstractions, dependency injection, or extraction to become testable, describe the refactor needed
 - Tests that test implementation details instead of behavior
 - Test doubles (mocks/stubs) that are too complex or fragile
-- **Do not flag test doubles for thread safety** — stubs, spies, and mocks run in a controlled test environment where execution order is deterministic. Adding locks or actors to test doubles adds noise without value. Only flag thread safety in test doubles if the test explicitly exercises concurrent behavior (e.g., testing a concurrent queue or actor)
+- **Do not flag test doubles for thread safety** — stubs, spies, and mocks run in a controlled test environment where execution order is deterministic. Adding synchronization primitives to test doubles adds noise without value. Only flag thread safety in test doubles if the test explicitly exercises concurrent behavior (e.g., testing concurrent data structures)
 - Verify that existing tests still cover the changed code — refactors can silently orphan test coverage
 
 ### 12. Function Parameters
@@ -122,7 +122,7 @@ Analyze the code against each category below. Only report findings that are **ac
 - Extract Component — views with repeated sub-view patterns
 - Replace Conditional with Polymorphism — switch/when statements that grow with new cases
 - Introduce Parameter Object — functions with many related parameters
-- Pull Up / Push Down — shared logic in wrong inheritance/protocol level
+- Pull Up / Push Down — shared logic in wrong inheritance/abstraction level
 - Eliminate passthrough code — classes/functions that only delegate to another without transformation
 
 ## Output Format

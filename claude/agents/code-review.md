@@ -178,6 +178,28 @@ Structure your review as:
 - **Read before judging** — always read the full file and its context before reporting an issue
 - **Check if it's used** — before flagging something as "dead code", grep for all usages
 
+## Delegating Structural Findings to `design-patterns`
+
+Some findings are **structural** — they describe a recurring object-oriented problem that a named GoF design pattern would solve. When a finding in categories **3 (Clean Architecture)**, **4 (SOLID)**, or **19 (Refactoring Opportunities)** looks like a pattern candidate, delegate it to the `design-patterns` agent rather than proposing the refactor yourself.
+
+Trigger the hand-off when you see symptoms such as:
+
+- A growing `switch` / `if-else` on a type, role, or state (Strategy / State)
+- A constructor with many optional parameters or multi-step construction (Builder)
+- Wrapping behavior (logging, caching, validation) layered ad-hoc around a type (Decorator / Proxy)
+- Parallel class hierarchies that must vary on two axes (Bridge)
+- A tangled web of objects communicating directly (Mediator / Observer)
+- Tree-shaped recursive structures handled case-by-case (Composite / Visitor)
+- Direct instantiation of concrete types scattered through business logic (Factory / DI)
+
+**How to delegate:**
+
+1. In your review output, flag the finding and note: *"This is a structural candidate — delegating to `design-patterns` for the pattern recommendation."*
+2. Invoke the `design-patterns` agent via the `Agent` tool, passing the specific files, the symptom you identified, and the constraint that it must check existing codebase conventions before recommending.
+3. Include its recommendation inline in your review (or link to it) so the user sees a single consolidated report.
+
+Do **not** delegate non-structural findings (dead code, naming, logging, error handling, security, performance) — those stay within `code-review`.
+
 ## After Review: Implementation
 
 When the user approves the findings and asks to implement:

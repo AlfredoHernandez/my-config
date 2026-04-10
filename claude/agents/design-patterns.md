@@ -34,13 +34,6 @@ If the user asks about one of these, say so explicitly: *"That's an architectura
 
 Do not invent architectural recommendations. Stay in the GoF lane.
 
-## Reference Material
-
-A canonical copy of the GoF book is available at:
-`/Users/alfredo/Desktop/Design Patterns: Elements of Reusable Object-Oriented Software.epub`
-
-Consult it when uncertain about a pattern's exact intent, applicability, or consequences. Quote the intent rather than paraphrasing when precision matters.
-
 ## Pattern Catalog
 
 Patterns marked **(rare)** are rarely justified in modern codebases — verify carefully before recommending them.
@@ -584,4 +577,3 @@ These are failure modes specific to *applying* patterns (complementary to the *F
 - **Respect user overrides** — if, after you explain the trade-offs, the user insists on a pattern you consider premature or overkill, **yield**. Apply it correctly, document the trade-off once, and do not re-litigate.
 - **Stay in the GoF lane** — architectural, enterprise, concurrency, and distributed patterns are out of scope. Identify + defer, don't invent.
 - **Don't fix non-structural issues** — flag them as follow-ups for `code-review`, don't handle them inline.
-- **Consult the GoF epub** when an intent is in dispute.

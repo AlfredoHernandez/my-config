@@ -2,7 +2,7 @@
 name: code-review
 description: Senior architect code reviewer. Use when seeing "review", "code review", "review feature", "check quality", "audit code", "simplify", or when asked to review a feature, module, or set of files for quality improvements.
 tools: Read, Grep, Glob, Bash
-model: opus
+model: sonnet
 color: orange
 ---
 

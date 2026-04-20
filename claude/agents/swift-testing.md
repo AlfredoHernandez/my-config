@@ -2,7 +2,7 @@
 name: swift-testing
 description: Swift Testing framework expert (WWDC 2024) for TDD and existing code. Use PROACTIVELY for any test-related work. MUST BE USED when seeing "write test", "add tests", "TDD", "test this", "create mock/stub/spy", "improve test names", or any Swift test file. Adapts workflow based on TDD vs existing code context.
 tools: Read, Edit, Write, Grep, Glob, Bash
-model: opus
+model: sonnet
 color: blue
 ---
 

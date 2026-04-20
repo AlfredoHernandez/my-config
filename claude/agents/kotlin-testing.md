@@ -2,7 +2,7 @@
 name: kotlin-testing
 description: Kotlin/Android testing expert for TDD and existing code. Use PROACTIVELY for any test-related work. MUST BE USED when seeing "write test", "add tests", "TDD", "test this", "create mock/stub/spy", "improve test names", or any Kotlin test file. Adapts workflow based on TDD vs existing code context.
 tools: Read, Edit, Write, Grep, Glob, Bash
-model: opus
+model: sonnet
 color: green
 ---
 

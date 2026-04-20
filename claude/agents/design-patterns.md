@@ -2,7 +2,7 @@
 name: design-patterns
 description: GoF design patterns expert. Invoked in two scenarios — (1) EXPLICIT user request ("design pattern", "apply pattern", "which pattern", "refactor with pattern", "pattern for this") or (2) AUTOMATIC hand-off from the `code-review` agent when findings in the SOLID, Clean Architecture, or Refactoring Opportunities categories suggest that a named GoF pattern would materially improve the design. For general quality audits (dead code, naming, error handling, logging, etc.) use `code-review` instead — this agent is only for problems where a structural pattern is a real candidate.
 tools: Read, Grep, Glob, Edit, Write, Bash
-model: opus
+model: sonnet
 color: purple
 ---
 

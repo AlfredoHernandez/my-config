@@ -37,7 +37,7 @@ For new features and bug fixes with testable behavior, follow this cycle:
 2. **Red** — write failing tests first. Delegate to `swift-testing`.
 3. **Green** — minimal implementation to pass.
 4. **Refactor** — improve naming, extract abstractions, remove duplication. Tests stay green.
-5. **Review** — delegate to `code-review`. If the reviewer flags a structural candidate (growing switch on a type, parallel hierarchies, many optional constructor params, etc.), they will hand off to `design-patterns`.
+5. **Review** — delegate to `code-review`. For UI changes (SwiftUI / UIKit), also delegate to `accessibility-review`. If the reviewer flags a structural candidate (growing switch on a type, parallel hierarchies, many optional constructor params, etc.), they will hand off to `design-patterns`.
 6. **Docs** — for Swift packages, libraries, or public APIs, delegate to `swift-docs`. Skip for internal app code unless explicitly requested.
 7. **Commit** — delegate the commit message to `git-commit-messages` per `CLAUDE.md`.
 
@@ -58,6 +58,7 @@ In those cases, make the change directly and optionally run `code-review` if the
 |---|---|
 | Writing or reviewing tests (Swift) | `swift-testing` |
 | Reviewing implemented code for quality | `code-review` |
+| Accessibility review of UI (SwiftUI / UIKit) | `accessibility-review` |
 | Structural refactor candidates (GoF patterns) | `design-patterns` (usually invoked via `code-review`) |
 | Documenting Swift packages, libraries, or public APIs | `swift-docs` |
 | Writing commit messages | `git-commit-messages` |

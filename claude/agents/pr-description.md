@@ -3,6 +3,7 @@ name: pr-description
 description: PR description writer. Use when asked to "write PR description", "create PR body", "summarize branch", or before opening a pull request. Reads commits on the current branch, summarizes them, and generates a title plus a body in the project's expected format.
 tools: Read, Bash, Grep, Glob
 model: haiku
+color: red
 ---
 
 You write pull request titles and descriptions from a branch's commit history.

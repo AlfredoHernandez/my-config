@@ -35,6 +35,29 @@ The leading `*` on continuation lines is idiomatic but optional — match the st
 
 ---
 
+## Avoid redundant documentation
+
+KDoc that only restates the signature adds noise and ages poorly. Remove or rewrite it.
+
+**Signs a comment is redundant:**
+
+- It repeats the symbol's name in prose (`/** Returns the name. */` on `val name: String`).
+- It paraphrases parameter types without adding context (`@param id The id.`).
+- It describes WHAT the code does when the signature already makes that clear.
+- It's boilerplate on a trivial getter, constructor, or passthrough.
+
+**A KDoc earns its place when it adds:**
+
+- Non-obvious preconditions, postconditions, or invariants.
+- Units, ranges, thread-safety / coroutine-scope guarantees, or side effects not visible from the type.
+- WHY a non-obvious design decision was made.
+- Usage examples for complex APIs.
+- Edge cases: `@throws`, nullable returns, empty-input behavior.
+
+If the only honest summary you can write paraphrases the signature, delete the comment.
+
+---
+
 ## Required structure for every public symbol
 
 | Element | Required | Description |
@@ -225,7 +248,7 @@ class Bicycle(
 
 1. **Be concise** — the summary must fit the Quick Documentation popover.
 2. **Use third person** — "Returns the value" not "Return the value".
-3. **Document all public API** — every `public` / `open` symbol needs KDoc.
+3. **Document public API that adds information** — every `public` / `open` symbol whose KDoc adds context beyond its signature; skip trivial ones (see *Avoid redundant documentation*).
 4. **Include examples** — for complex APIs, show usage patterns.
 5. **Document edge cases** — `@throws`, preconditions, nullable returns.
 6. **Link related items** — `[SymbolName]` for cross-references, `@see` for explicit pointers.

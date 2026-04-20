@@ -9,6 +9,7 @@
 - Prefer composition over inheritance
 - Keep functions small and focused on a single responsibility
 - Threading handling is very important in tests
+- Avoid redundant comments — comments must explain WHY, hidden constraints, or non-obvious invariants; delete comments that only restate WHAT the code already says
 
 # Development Workflow
 

@@ -122,7 +122,7 @@ Add these for Xcode source navigator organization:
 ## Complete example
 
 ```swift
-/// 🚲 A two-wheeled, human-powered mode of transportation.
+/// A two-wheeled, human-powered mode of transportation.
 ///
 /// Use `Bicycle` to model and track bicycle usage including
 /// trips and total distance traveled.

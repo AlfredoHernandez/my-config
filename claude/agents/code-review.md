@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: Senior architect code reviewer. Use when seeing "review", "code review", "review feature", "check quality", "audit code", "simplify", or when asked to review a feature, module, or set of files for quality improvements.
+description: Senior architect code reviewer. Use when seeing "review", "code review", "review feature", "check quality", "audit code", or when asked to review a feature, module, or set of files for quality improvements. For "simplify", prefer the `simplify` skill.
 tools: Read, Grep, Glob, Bash
 model: sonnet
 color: orange

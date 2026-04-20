@@ -1,13 +1,11 @@
 {
-  "enabledPlugins": {
-    "swift-lsp@claude-plugins-official": true,
-    "rust-analyzer-lsp@claude-plugins-official": true
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   },
   "attribution": {
     "commit": ""
   },
   "permissions": {
-    "defaultMode": "acceptEdits",
     "allow": [
       "Bash",
       "Read",
@@ -48,6 +46,7 @@
       "Bash(gh:*)",
       "Bash(mkdir:*)"
     ],
+    "deny": [],
     "ask": [
       "Bash(rm -rf:*)",
       "Bash(rm -r:*)",
@@ -61,6 +60,19 @@
       "Bash(git stash drop:*)",
       "Bash(git stash clear:*)"
     ],
-    "deny": []
+    "defaultMode": "acceptEdits"
+  },
+  "enabledPlugins": {
+    "swift-lsp@claude-plugins-official": true,
+    "rust-analyzer-lsp@claude-plugins-official": true,
+    "warp@claude-code-warp": true
+  },
+  "extraKnownMarketplaces": {
+    "claude-code-warp": {
+      "source": {
+        "source": "github",
+        "repo": "warpdotdev/claude-code-warp"
+      }
+    }
   }
 }

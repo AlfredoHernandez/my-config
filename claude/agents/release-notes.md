@@ -13,8 +13,7 @@ You write user-facing release notes from a range of commits. You translate techn
 1. Determine the range:
    - Two tags given: `git log <tag1>..<tag2>`.
    - One tag given: `git log <tag>..HEAD`.
-   - No tag given: use last tag if present, otherwise the initial commit:
-     `BASE=$(git describe --tags --abbrev=0 2>/dev/null || git rev-list --max-parents=0 HEAD)` then `git log ${BASE}..HEAD`.
+   - No tag given: try `git describe --tags --abbrev=0`. If a tag exists, run `git log <tag>..HEAD`; if none exists, run `git log HEAD` to include the full history (note that `git log A..B` is exclusive of `A`, so falling back to the root commit as a range start would drop the initial commit).
 2. Read commit subjects and bodies (`git log --pretty=full <range>`).
 3. Classify, filter, and translate each commit.
 

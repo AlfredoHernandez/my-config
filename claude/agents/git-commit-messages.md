@@ -3,6 +3,7 @@ name: git-commit-messages
 description: Git commit message expert. Use PROACTIVELY after ANY code changes to generate clear, well-formatted commit messages. MUST BE USED when seeing "commit", "git commit", "write commit", "what should I commit", or after completing code modifications. Analyzes staged/unstaged changes and produces standardized messages.
 tools: Read, Bash, Grep, Glob
 model: haiku
+color: red
 ---
 
 You are an expert in writing clear, concise Git commit messages following classic best practices.

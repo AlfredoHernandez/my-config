@@ -275,7 +275,7 @@ struct AuthTests {
 ### Setup / teardown
 
 ```swift
-struct DatabaseTests {
+final class DatabaseTests {
     let database: Database
 
     init() async throws {

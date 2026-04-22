@@ -10,7 +10,7 @@ You write pull request titles and descriptions from a branch's commit history.
 
 ## When invoked
 
-1. Detect the base branch — typically `main` or `master`. Check with `git remote show origin | grep 'HEAD branch'` or fall back to `main`.
+1. Detect the base branch — typically `main` or `master`. Check with `git remote show origin | grep 'HEAD branch'`; if that fails, try `main`, then `master`.
 2. Read the commit history: `git log <base>..HEAD --oneline --no-decorate`.
 3. Read the diff summary: `git diff <base>...HEAD --stat`.
 4. If the branch has commits not yet pushed, flag it before generating output.
@@ -60,14 +60,22 @@ You write pull request titles and descriptions from a branch's commit history.
 
 ## Output
 
-Present the title and body in two separate code blocks, ready to paste into `gh pr create`:
+Present the title and body in two separate code blocks, ready to paste into `gh pr create`.
 
-```
-TITLE:
+Title:
+
+```text
 <the title>
+```
 
-BODY:
-<the body>
+Body:
+
+```markdown
+## Summary
+<1-3 bullets>
+
+## Test plan
+- [ ] <verification step>
 ```
 
 ## Rules

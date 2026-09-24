@@ -361,7 +361,7 @@ install_or_update_dir() {
         return 1
     fi
 
-    mkdir -p "$dest"
+    $DRY_RUN || mkdir -p "$dest"
     for file in "$src"/*; do
         local name
         name="$(basename "$file")"
@@ -466,7 +466,7 @@ validate_prerequisites() {
         ((failed++))
     fi
 
-    if [[ -w "$HOME/Library/Fonts" ]] || mkdir -p "$HOME/Library/Fonts" 2>/dev/null; then
+    if [[ -w "$HOME/Library/Fonts" ]] || { $DRY_RUN && [[ -w "$HOME" ]]; } || mkdir -p "$HOME/Library/Fonts" 2>/dev/null; then
         print_pass "Fonts directory accessible"
         ((passed++))
     else
@@ -690,7 +690,7 @@ install_claude_agents() {
 install_custom_scripts() {
     print_header "Custom Scripts Installation"
     local bin_dir="$HOME/Developer/bin"
-    mkdir -p "$bin_dir"
+    $DRY_RUN || mkdir -p "$bin_dir"
 
     for script in scripts/*.sh; do
         local name
@@ -789,7 +789,7 @@ fi
 if should_install "themes" "$INSTALL_THEMES" "$SKIP_THEMES"; then
     print_header "Xcode Themes Installation"
     themes_dest="$XC_USER_DATA/FontAndColorThemes"
-    mkdir -p "$themes_dest"
+    $DRY_RUN || mkdir -p "$themes_dest"
     for theme in Themes/*.xccolortheme; do
         name="$(basename "$theme")"
         install_or_update_file "$theme" "$themes_dest/$name" "Theme: $name"

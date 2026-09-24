@@ -70,6 +70,24 @@ The `install.sh` script automatically handles:
 8. **Script Installation** - Copies custom scripts to `~/Developer/bin/`
 9. **Xcode Integration** - Installs templates and color themes
 
+### ⚠️ Manual step: select the font in your terminal
+
+Installing the font does not make your terminal use it. The `ls`/`ll`/`la` aliases
+run `eza --icons`, so without a Nerd Font selected in your terminal profile the
+icons render as boxes or question marks.
+
+After installing, set the font manually in your terminal's profile preferences:
+
+| Terminal | Where |
+|----------|-------|
+| Terminal.app | Settings → Profiles → Text → Font |
+| iTerm2 | Settings → Profiles → Text → Font |
+| Ghostty | `font-family = JetBrainsMono Nerd Font` in `~/.config/ghostty/config` |
+| VS Code | `"terminal.integrated.fontFamily": "JetBrainsMono Nerd Font"` |
+
+Pick **JetBrainsMono Nerd Font** (or *JetBrainsMono Nerd Font Mono* for strict
+monospacing).
+
 ## 🎯 Scripts
 
 ### `install.sh` - Installation

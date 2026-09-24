@@ -68,7 +68,7 @@ get_version() {
             brew --version | head -n1 | awk '{print $2}'
             ;;
         eza)
-            eza --version | head -n1 | awk '{print $2}'
+            eza --version | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -n1
             ;;
         swiftformat)
             swiftformat --version
@@ -142,6 +142,7 @@ check_font() {
        ls /Library/Fonts/JetBrainsMonoNFM*.ttf &>/dev/null; then
         local font_count=$(ls "$font_dir"/JetBrainsMonoNerdFont*.ttf "$font_dir"/JetBrainsMonoNFM*.ttf 2>/dev/null | wc -l | xargs)
         print_pass "JetBrains Mono Nerd Font installed ($font_count font files)"
+        print_info "Select it in your terminal profile if icons render as boxes"
     else
         print_fail "JetBrains Mono Nerd Font not found"
         print_info "Run './install.sh' to install the font"

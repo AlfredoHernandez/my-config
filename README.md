@@ -66,9 +66,27 @@ The `install.sh` script automatically handles:
 4. **JetBrains Mono Nerd Font** - Installs programming font with ligatures and icons
 5. **SwiftFormat Configuration** - Copies custom formatting rules to `~/.swiftformat`
 6. **Claude Code Configuration** - Installs global instructions and custom agents to `~/.claude/`
-7. **Shell Aliases** - Adds all aliases to your `.zshrc` file
+7. **Shell Aliases** - Installs `~/.config/aliases.zsh` and sources it from your `.zshrc`
 8. **Script Installation** - Copies custom scripts to `~/Developer/bin/`
 9. **Xcode Integration** - Installs templates and color themes
+
+### ⚠️ Manual step: select the font in your terminal
+
+Installing the font does not make your terminal use it. The `ls`/`ll`/`la` aliases
+run `eza --icons`, so without a Nerd Font selected in your terminal profile the
+icons render as boxes or question marks.
+
+After installing, set the font manually in your terminal's profile preferences:
+
+| Terminal | Where |
+|----------|-------|
+| Terminal.app | Settings → Profiles → Text → Font |
+| iTerm2 | Settings → Profiles → Text → Font |
+| Ghostty | `font-family = JetBrainsMono Nerd Font` in `~/.config/ghostty/config` |
+| VS Code | `"terminal.integrated.fontFamily": "JetBrainsMono Nerd Font"` |
+
+Pick **JetBrainsMono Nerd Font** (or *JetBrainsMono Nerd Font Mono* for strict
+monospacing).
 
 ## 🎯 Scripts
 
@@ -172,7 +190,7 @@ Removes installed components from your system.
 ./uninstall.sh --tools      # Remove Homebrew packages (eza, swiftformat)
 ./uninstall.sh --font       # Remove JetBrains Mono Nerd Font
 ./uninstall.sh --config     # Remove SwiftFormat configuration
-./uninstall.sh --aliases    # Remove shell aliases from .zshrc
+./uninstall.sh --aliases    # Remove shell aliases
 ./uninstall.sh --scripts    # Remove custom scripts
 ./uninstall.sh --xcode      # Remove Xcode themes, templates, headers
 ./uninstall.sh --claude     # Remove Claude configuration and agents

@@ -51,7 +51,7 @@ show_help() {
     echo "  --tools             Remove Homebrew packages (eza, swiftformat)"
     echo "  --font              Remove JetBrains Mono Nerd Font"
     echo "  --config            Remove SwiftFormat configuration"
-    echo "  --aliases           Remove shell aliases from .zshrc"
+    echo "  --aliases           Remove shell aliases"
     echo "  --scripts           Remove custom scripts"
     echo "  --xcode             Remove Xcode themes, templates, headers"
     echo "  --claude            Remove Claude configuration and agents"
@@ -214,34 +214,53 @@ remove_config() {
     fi
 }
 
-# Remove aliases from .zshrc
+# Remove aliases file and its .zshrc source line
 remove_aliases() {
     print_header "Shell Aliases"
 
     local zshrc_file="$HOME/.zshrc"
+    local aliases_file="$HOME/.config/aliases.zsh"
+    local removed_any=false
+
+    if [[ -f "$aliases_file" ]]; then
+        removed_any=true
+        if $DRY_RUN; then
+            print_dry_run "$aliases_file"
+        else
+            rm -f "$aliases_file"
+            print_success "Removed ~/.config/aliases.zsh"
+        fi
+    fi
 
     if [[ ! -f "$zshrc_file" ]]; then
-        print_skip ".zshrc not found"
+        $removed_any || print_skip ".zshrc not found"
         return 0
     fi
 
-    if ! grep -q "# Git aliases" "$zshrc_file" 2>/dev/null; then
-        print_skip "Aliases section not found in .zshrc"
-        return 0
+    if grep -q "aliases.zsh" "$zshrc_file" 2>/dev/null; then
+        removed_any=true
+        if $DRY_RUN; then
+            print_dry_run "Aliases source line from .zshrc"
+        else
+            cp "$zshrc_file" "$zshrc_file.backup"
+            sed -i '' '/^# My config aliases$/d; /source.*aliases\.zsh/d' "$zshrc_file"
+            print_success "Removed aliases source line (backup: .zshrc.backup)"
+        fi
     fi
 
-    if $DRY_RUN; then
-        print_dry_run "Aliases section from .zshrc"
-    else
-        print_status "Removing aliases from .zshrc..."
-        # Create backup
-        cp "$zshrc_file" "$zshrc_file.backup"
-
-        # Remove aliases section (from "# Git aliases" to "alias dl=...")
-        sed -i '' '/^# Git aliases/,/^alias dl=/d' "$zshrc_file"
-
-        print_success "Removed aliases (backup: .zshrc.backup)"
+    if grep -q "# Git aliases" "$zshrc_file" 2>/dev/null; then
+        removed_any=true
+        if $DRY_RUN; then
+            print_dry_run "Legacy inline aliases section from .zshrc"
+        else
+            [[ -f "$zshrc_file.backup" ]] || cp "$zshrc_file" "$zshrc_file.backup"
+            sed -i '' '/^# Git aliases/,/^alias dl=/d' "$zshrc_file"
+            print_success "Removed legacy inline aliases (backup: .zshrc.backup)"
+        fi
     fi
+
+    $removed_any || print_skip "Aliases not installed"
+    return 0
 }
 
 # Remove custom scripts

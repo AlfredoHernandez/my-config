@@ -773,7 +773,7 @@ if should_install "scripts" "$INSTALL_SCRIPTS" "$SKIP_SCRIPTS"; then
     install_custom_scripts
 fi
 
-# Add aliases to .zshrc
+# Install aliases and source them from .zshrc
 if should_install "aliases" "$INSTALL_ALIASES" "$SKIP_ALIASES"; then
     print_header "Shell Configuration"
     add_aliases_to_zshrc

@@ -143,31 +143,38 @@ sync_scripts() {
     fi
 }
 
-# Sync .zshrc aliases
+# Sync aliases from the installed location back into the repo
 sync_aliases() {
     print_status "Checking aliases..."
     local zshrc="$HOME/.zshrc"
+    local aliases_file="$HOME/.config/aliases.zsh"
     local dest="$REPO_DIR/config/aliases.zsh"
 
-    if [[ -f "$zshrc" ]] && grep -q "# Git aliases" "$zshrc" 2>/dev/null; then
-        local tmp
-        tmp="$(mktemp)"
-        awk '/^# Git aliases/,/^alias dl=/' "$zshrc" > "$tmp" 2>/dev/null
+    if [[ -f "$aliases_file" ]]; then
+        sync_file "$aliases_file" "$dest" "Aliases"
+        return
+    fi
 
-        if [[ -s "$tmp" ]]; then
-            if ! diff -q "$tmp" "$dest" &>/dev/null; then
-                cp "$tmp" "$dest"
-                print_updated "Aliases"
-            else
-                print_ok "Aliases"
-            fi
+    if [[ ! -f "$zshrc" ]] || ! grep -q "# Git aliases" "$zshrc" 2>/dev/null; then
+        print_missing "No aliases found in ~/.config/aliases.zsh or .zshrc"
+        return
+    fi
+
+    local tmp
+    tmp="$(mktemp)"
+    awk '/^# Git aliases/,/^alias dl=/' "$zshrc" > "$tmp" 2>/dev/null
+
+    if [[ -s "$tmp" ]]; then
+        if ! diff -q "$tmp" "$dest" &>/dev/null; then
+            cp "$tmp" "$dest"
+            print_updated "Aliases (legacy inline .zshrc block)"
         else
-            print_missing "No aliases section found in .zshrc"
+            print_ok "Aliases"
         fi
-        rm -f "$tmp"
     else
         print_missing "No aliases section found in .zshrc"
     fi
+    rm -f "$tmp"
 }
 
 # Sync Claude Code configuration

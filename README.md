@@ -66,7 +66,7 @@ The `install.sh` script automatically handles:
 4. **JetBrains Mono Nerd Font** - Installs programming font with ligatures and icons
 5. **SwiftFormat Configuration** - Copies custom formatting rules to `~/.swiftformat`
 6. **Claude Code Configuration** - Installs global instructions and custom agents to `~/.claude/`
-7. **Shell Aliases** - Adds all aliases to your `.zshrc` file
+7. **Shell Aliases** - Installs `~/.config/aliases.zsh` and sources it from your `.zshrc`
 8. **Script Installation** - Copies custom scripts to `~/Developer/bin/`
 9. **Xcode Integration** - Installs templates and color themes
 
@@ -172,7 +172,7 @@ Removes installed components from your system.
 ./uninstall.sh --tools      # Remove Homebrew packages (eza, swiftformat)
 ./uninstall.sh --font       # Remove JetBrains Mono Nerd Font
 ./uninstall.sh --config     # Remove SwiftFormat configuration
-./uninstall.sh --aliases    # Remove shell aliases from .zshrc
+./uninstall.sh --aliases    # Remove shell aliases
 ./uninstall.sh --scripts    # Remove custom scripts
 ./uninstall.sh --xcode      # Remove Xcode themes, templates, headers
 ./uninstall.sh --claude     # Remove Claude configuration and agents

@@ -152,31 +152,45 @@ check_font() {
 check_aliases() {
     print_header "Shell Aliases"
     local zshrc_file="$HOME/.zshrc"
-    
-    if [ -f "$zshrc_file" ]; then
-        if grep -q "# Git aliases" "$zshrc_file"; then
-            print_pass "Shell aliases configured in .zshrc"
-            
-            # Count installed aliases
-            local alias_count=$(grep -c "^alias" "$zshrc_file" | xargs)
-            print_info "Found $alias_count aliases"
-            
-            # Check specific important aliases
-            for alias_name in gl gp gst gc ll la; do
-                if grep -q "alias $alias_name=" "$zshrc_file"; then
-                    print_info "  ✓ $alias_name configured"
-                else
-                    print_warning "  ✗ $alias_name not found"
-                fi
-            done
-        else
-            print_fail "Shell aliases not found in .zshrc"
-            print_info "Run './install.sh' to add aliases"
-        fi
-    else
+    local aliases_file="$HOME/.config/aliases.zsh"
+
+    if [ ! -f "$zshrc_file" ]; then
         print_fail ".zshrc file not found"
         print_info "Create a .zshrc file and run './install.sh'"
+        return
     fi
+
+    local alias_source=""
+
+    if [ -f "$aliases_file" ]; then
+        alias_source="$aliases_file"
+
+        if grep -q "source.*aliases.zsh" "$zshrc_file"; then
+            print_pass "Shell aliases sourced from ~/.config/aliases.zsh"
+        else
+            print_fail "Aliases file exists but is not sourced in .zshrc"
+            print_info "Run './install.sh --only-aliases' to add the source line"
+        fi
+    elif grep -q "# Git aliases" "$zshrc_file"; then
+        alias_source="$zshrc_file"
+        print_pass "Shell aliases configured inline in .zshrc"
+        print_info "Run './install.sh --only-aliases' to migrate them to ~/.config/aliases.zsh"
+    else
+        print_fail "Shell aliases not found"
+        print_info "Run './install.sh' to add aliases"
+        return
+    fi
+
+    local alias_count=$(grep -c "^alias" "$alias_source" | xargs)
+    print_info "Found $alias_count aliases"
+
+    for alias_name in gl gp gst gc ll la; do
+        if grep -q "alias $alias_name=" "$alias_source"; then
+            print_info "  ✓ $alias_name configured"
+        else
+            print_warning "  ✗ $alias_name not found"
+        fi
+    done
 }
 
 # Check custom scripts

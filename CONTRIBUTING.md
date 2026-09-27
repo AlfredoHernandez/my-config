@@ -73,7 +73,8 @@ my-config/
 ├── claude/              # Claude Code configuration
 │   ├── CLAUDE.md        # Global instructions
 │   ├── settings.json    # Claude Code settings
-│   └── agents/          # Custom AI agents
+│   ├── agents/          # Custom AI agents
+│   └── skills/          # Custom skills (one directory per skill)
 ├── Themes/              # Xcode color themes
 ├── Templates/           # Xcode file templates
 └── Headers/             # Xcode header templates

@@ -36,6 +36,9 @@ This repository contains my personal development configuration that I use across
   - `swift-testing` - Expert in Swift Testing framework and TDD
   - `swift-docs` - Swift documentation specialist
   - `kotlin-testing` - Kotlin/Android testing expert
+- **Custom Skills** - Skill directories (each with a `SKILL.md`) installed to `~/.claude/skills/`:
+  - `nightshift` - Works a ticket end-to-end: branch, implement, test, commit and PR
+  - `parity` - Keeps iOS / Android / Flutter / React Native apps at feature parity
 
 ### 🔤 Fonts
 - **JetBrains Mono Nerd Font** - Programming font with ligatures and icons
@@ -65,7 +68,7 @@ The `install.sh` script automatically handles:
 3. **SwiftFormat Installation** - Installs SwiftFormat for automatic code formatting
 4. **JetBrains Mono Nerd Font** - Installs programming font with ligatures and icons
 5. **SwiftFormat Configuration** - Copies custom formatting rules to `~/.swiftformat`
-6. **Claude Code Configuration** - Installs global instructions and custom agents to `~/.claude/`
+6. **Claude Code Configuration** - Installs global instructions, custom agents and skills to `~/.claude/`
 7. **Shell Aliases** - Installs `~/.config/aliases.zsh` and sources it from your `.zshrc`
 8. **Script Installation** - Copies custom scripts to `~/Developer/bin/`
 9. **Xcode Integration** - Installs templates and color themes
@@ -157,6 +160,8 @@ Compares installed files on your system against the repo and copies any changes 
 
 **Direction:** System → Repo (opposite of `install.sh` and `update.sh`)
 
+Claude skills are synced from `~/.claude/skills/<name>/` for every directory containing a `SKILL.md`. Skills managed by the Claude app (`~/.claude/skills/synced/`) and `__pycache__` folders are ignored.
+
 ### `health-check.sh` - Health Check
 
 Verifies that all components are properly installed and configured.
@@ -168,7 +173,7 @@ Verifies that all components are properly installed and configured.
 - Checks if all tools are installed (Homebrew, eza, SwiftFormat, fonts)
 - Verifies configuration files exist and are properly configured
 - Validates Xcode themes, templates, and headers
-- Checks Claude Code configuration and agents
+- Checks Claude Code configuration, agents and skills
 - Verifies custom scripts are installed and executable
 - Shows version information for installed tools
 - Detects outdated packages and suggests updates
@@ -193,7 +198,7 @@ Removes installed components from your system.
 ./uninstall.sh --aliases    # Remove shell aliases
 ./uninstall.sh --scripts    # Remove custom scripts
 ./uninstall.sh --xcode      # Remove Xcode themes, templates, headers
-./uninstall.sh --claude     # Remove Claude configuration and agents
+./uninstall.sh --claude     # Remove Claude configuration, agents and repo skills
 ```
 
 ## 📚 Available Aliases

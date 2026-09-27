@@ -85,6 +85,7 @@ sync_dir() {
     for file in "$source"/*; do
         local filename
         filename="$(basename "$file")"
+        [[ "$filename" == "__pycache__" ]] && continue
 
         if [[ -d "$file" ]]; then
             sync_dir "$file" "$dest/$filename" "$label/$filename"
@@ -194,6 +195,24 @@ sync_claude() {
     else
         print_missing "No Claude agents installed"
     fi
+
+    sync_claude_skills
+}
+
+# Sync Claude skills (each skill is a directory with a SKILL.md)
+sync_claude_skills() {
+    local skills_dir="$HOME/.claude/skills"
+    local found=false
+
+    for skill in "$skills_dir"/*/; do
+        [[ -f "$skill/SKILL.md" ]] || continue
+        local name
+        name="$(basename "$skill")"
+        found=true
+        sync_dir "${skill%/}" "$REPO_DIR/claude/skills/$name" "Claude skill: $name"
+    done
+
+    $found || print_missing "No Claude skills installed"
 }
 
 # Sync SwiftFormat configuration

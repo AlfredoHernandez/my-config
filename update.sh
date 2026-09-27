@@ -293,6 +293,8 @@ update_config() {
         fi
     fi
 
+    update_claude_skills
+
     # Xcode themes
     local themes_src="$SCRIPT_DIR/Themes"
     local themes_dest="$XC_USER_DATA/FontAndColorThemes"
@@ -390,6 +392,36 @@ update_font() {
 }
 
 # Print summary
+# Each skill is a directory, so it is compared and copied as a whole tree
+update_claude_skills() {
+    local skills_src="$SCRIPT_DIR/claude/skills"
+    local skills_dest="$HOME/.claude/skills"
+
+    [[ -d "$skills_src" ]] || return
+
+    local skills_changed=0
+    for skill in "$skills_src"/*/; do
+        local skill_name
+        skill_name="$(basename "$skill")"
+        if diff -rq -x __pycache__ -x .DS_Store "$skill" "$skills_dest/$skill_name" >/dev/null 2>&1; then
+            continue
+        fi
+        skills_changed=$((skills_changed + 1))
+        if $CHECK_ONLY; then
+            print_check "Skill $skill_name has changes"
+        else
+            mkdir -p "$skills_dest/$skill_name"
+            cp -R "$skill" "$skills_dest/$skill_name/"
+        fi
+    done
+
+    if [[ $skills_changed -eq 0 ]]; then
+        $CHECK_ONLY && print_info "All skills are up to date" || print_skip "All skills already up to date"
+    elif ! $CHECK_ONLY; then
+        print_success "Updated $skills_changed skill(s)"
+    fi
+}
+
 print_summary() {
     echo ""
     echo -e "${WHITE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"

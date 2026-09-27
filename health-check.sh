@@ -332,6 +332,27 @@ check_claude_agents() {
     fi
 }
 
+# Check Claude skills
+check_claude_skills() {
+    print_header "Claude Skills"
+    local skills_dir="$HOME/.claude/skills"
+    local skill_names=()
+
+    for skill_file in "$skills_dir"/*/SKILL.md; do
+        [ -f "$skill_file" ] && skill_names+=("$(basename "$(dirname "$skill_file")")")
+    done
+
+    if [ "${#skill_names[@]}" -gt 0 ]; then
+        print_pass "Claude skills found: ${#skill_names[@]} skill(s)"
+        for skill_name in "${skill_names[@]}"; do
+            print_info "  ✓ $skill_name"
+        done
+    else
+        print_warning "No Claude skills found"
+        print_info "Run './install.sh' to install skills"
+    fi
+}
+
 # Check for Xcode installation
 check_xcode() {
     print_header "Xcode"
@@ -429,6 +450,7 @@ check_xcode_templates
 check_xcode_header
 check_claude_config
 check_claude_agents
+check_claude_skills
 check_git
 
 print_summary

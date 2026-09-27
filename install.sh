@@ -63,7 +63,7 @@ show_help() {
     echo "  --only-themes              Install only Xcode color themes"
     echo "  --only-templates           Install only Xcode templates"
     echo "  --only-header              Install only Xcode header template"
-    echo "  --only-claude              Install only Claude Code configuration and agents"
+    echo "  --only-claude              Install only Claude Code configuration, agents and skills"
     echo ""
     echo "Skip Specific Components (installs everything except specified):"
     echo "  --skip-homebrew            Skip Homebrew installation"
@@ -108,7 +108,7 @@ list_components() {
     echo "  • header               - Header template"
     echo ""
     echo "Claude Code:"
-    echo "  • claude               - Configuration and custom agents"
+    echo "  • claude               - Configuration, custom agents and skills"
     echo ""
 }
 
@@ -526,7 +526,7 @@ print_banner() {
     echo "║    • eza (modern ls replacement)                            ║"
     echo "║    • SwiftFormat (Swift code formatter)                     ║"
     echo "║    • JetBrains Mono Nerd Font                               ║"
-    echo "║    • Claude Code configuration and agents                    ║"
+    echo "║    • Claude Code configuration, agents and skills           ║"
     echo "║    • Custom shell aliases                                   ║"
     echo "║    • Xcode themes and templates                             ║"
     echo "║    • Development scripts                                    ║"
@@ -686,6 +686,12 @@ install_claude_agents() {
     install_or_update_dir "claude/agents" "$HOME/.claude/agents" "Agent"
 }
 
+# Function to install Claude skills
+install_claude_skills() {
+    print_header "Claude Skills Installation"
+    install_or_update_dir "claude/skills" "$HOME/.claude/skills" "Skill"
+}
+
 # Function to install custom scripts
 install_custom_scripts() {
     print_header "Custom Scripts Installation"
@@ -763,6 +769,11 @@ if should_install "claude" "$INSTALL_CLAUDE" "$SKIP_CLAUDE"; then
     install_claude_agents
 fi
 
+# Install Claude skills
+if should_install "claude" "$INSTALL_CLAUDE" "$SKIP_CLAUDE"; then
+    install_claude_skills
+fi
+
 # Install Claude Code settings
 if should_install "claude" "$INSTALL_CLAUDE" "$SKIP_CLAUDE"; then
     install_claude_settings
@@ -811,7 +822,7 @@ if $DRY_RUN; then
     echo -e "  ${YELLOW}○${NC} eza (modern ls replacement)"
     echo -e "  ${YELLOW}○${NC} SwiftFormat with custom configuration"
     echo -e "  ${YELLOW}○${NC} JetBrains Mono Nerd Font"
-    echo -e "  ${YELLOW}○${NC} Claude Code configuration and agents"
+    echo -e "  ${YELLOW}○${NC} Claude Code configuration, agents and skills"
     echo -e "  ${YELLOW}○${NC} Shell aliases for Git and development"
     echo -e "  ${YELLOW}○${NC} Xcode themes and templates"
     echo -e "  ${YELLOW}○${NC} Custom development scripts"
@@ -826,7 +837,7 @@ else
     echo -e "  ${GREEN}✓${NC} eza (modern ls replacement)"
     echo -e "  ${GREEN}✓${NC} SwiftFormat with custom configuration"
     echo -e "  ${GREEN}✓${NC} JetBrains Mono Nerd Font"
-    echo -e "  ${GREEN}✓${NC} Claude Code configuration and agents"
+    echo -e "  ${GREEN}✓${NC} Claude Code configuration, agents and skills"
     echo -e "  ${GREEN}✓${NC} Shell aliases for Git and development"
     echo -e "  ${GREEN}✓${NC} Xcode themes and templates"
     echo -e "  ${GREEN}✓${NC} Custom development scripts"

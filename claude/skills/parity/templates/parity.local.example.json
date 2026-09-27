@@ -1,0 +1,8 @@
+{
+  "_comment": "Machine-specific sibling locations. Copy to .parity.local.json at the repo root and add that name to .gitignore. Read only by the parity tool — never by a test, never by a build.",
+  "repos": {
+    "ios": "/absolute/path/to/the/ios/repo",
+    "android": "/absolute/path/to/the/android/repo"
+  },
+  "reports": "/absolute/path/where/audit/reports/go"
+}

@@ -3,6 +3,7 @@ set -uo pipefail
 
 USER="$(whoami)"
 XC_DIR="/Users/$USER/Library/Developer/Xcode"
+REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 XC_USER_DATA="$XC_DIR/UserData"
 
 # Colors
@@ -54,7 +55,7 @@ show_help() {
     echo "  --aliases           Remove shell aliases"
     echo "  --scripts           Remove custom scripts"
     echo "  --xcode             Remove Xcode themes, templates, headers"
-    echo "  --claude            Remove Claude configuration and agents"
+    echo "  --claude            Remove Claude configuration, agents and skills"
     echo "  --help, -h          Show this help message"
     echo ""
     echo "Examples:"
@@ -367,6 +368,29 @@ remove_claude() {
     else
         print_skip "No Claude agents found"
     fi
+
+    remove_claude_skills
+}
+
+# Only skills shipped by this repo are removed; other skills in ~/.claude/skills are left alone
+remove_claude_skills() {
+    local skills_dir="$HOME/.claude/skills"
+    local removed=0
+
+    for skill in "$REPO_DIR"/claude/skills/*/; do
+        local name
+        name="$(basename "$skill")"
+        [[ -d "$skills_dir/$name" ]] || continue
+        if $DRY_RUN; then
+            print_dry_run "Claude skill: $name"
+        else
+            rm -rf "${skills_dir:?}/$name"
+            print_success "Removed Claude skill: $name"
+        fi
+        removed=$((removed + 1))
+    done
+
+    [[ $removed -gt 0 ]] || print_skip "No Claude skills found"
 }
 
 # Print summary

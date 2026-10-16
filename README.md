@@ -37,7 +37,7 @@ This repository contains my personal development configuration that I use across
   - `swift-docs` - Swift documentation specialist
   - `kotlin-testing` - Kotlin/Android testing expert
 - **Custom Skills** - Skill directories (each with a `SKILL.md`) installed to `~/.claude/skills/`:
-  - `nightshift` - Works a ticket end-to-end: branch, implement, test, commit and PR
+  - `nightshift` - Delivers a feature / fix / release end-to-end: branch, use cases, implement, test, review, commit and PR
   - `parity` - Keeps iOS / Android / Flutter / React Native apps at feature parity
 
 ### 🔤 Fonts

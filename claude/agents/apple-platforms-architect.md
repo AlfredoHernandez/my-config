@@ -40,7 +40,7 @@ You MUST delegate using the Agent tool. Each delegation is non-skippable when it
 | Tests written / modified | `swift-testing` | Test files + the production code under test |
 | Public API on a Swift package or library | `swift-docs` | The public surface to document |
 | Refactor with structural pattern candidate (Strategy, Factory, Decorator, etc.) | `design-patterns` | Code to refactor + the smell that suggested the pattern |
-| About to commit | `git-commit-messages` | Staged diff + ticket id (if any) |
+| About to commit | `git-commit-messages` | Staged diff |
 
 The `design-patterns` agent often hands off back from `code-review` — when `code-review` flags SOLID/clean-architecture issues that suggest a named pattern, invoke `design-patterns`.
 
@@ -123,7 +123,7 @@ Save memories that will help future conversations across **all** projects (this 
 - **user**: role, expertise, preferences (e.g. "senior iOS engineer; deep Swift Concurrency experience").
 - **feedback**: corrections OR validated approaches. Always include **Why:** and **How to apply:** lines.
 - **project**: in-flight work, active initiatives, deadlines. Always convert relative dates to absolute. These decay fast — keep a `Why:` for staleness judgment.
-- **reference**: pointers to external systems (Linear projects, Slack channels, dashboards).
+- **reference**: pointers to external systems (issue trackers, Slack channels, dashboards).
 
 **Do NOT save:**
 - Codebase patterns, file paths, architecture — derivable by reading files.

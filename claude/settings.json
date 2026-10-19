@@ -3,44 +3,16 @@
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   },
   "attribution": {
-    "commit": ""
+    "commit": "",
+    "pr": ""
   },
   "permissions": {
     "allow": [
       "Bash",
-      "Read",
-      "Edit",
-      "Write",
-      "Glob",
-      "Grep",
       "WebFetch",
       "WebSearch",
-      "Agent",
-      "NotebookEdit",
-      "LSP",
-      "Bash(rm -rf ~/Library/Developer/Xcode/DerivedData:*)",
-      "Bash(xcodebuild:*)",
-      "Bash(swift:*)",
-      "Bash(xcrun:*)",
-      "Bash(open *.xcodeproj:*)",
-      "Bash(open *.xcworkspace:*)",
-      "Bash(pod:*)",
-      "Bash(cargo:*)",
-      "Bash(git checkout:*)",
-      "Bash(git pull:*)",
-      "Bash(git fetch:*)",
-      "Bash(git merge:*)",
-      "Bash(git rebase:*)",
-      "Bash(git log:*)",
-      "Bash(git diff:*)",
-      "Bash(git stash:*)",
-      "Bash(brew:*)",
-      "Bash(npm:*)",
-      "Bash(npx:*)",
-      "Bash(gh:*)",
-      "Bash(mkdir:*)"
+      "mcp__claude-in-chrome__*"
     ],
-    "deny": [],
     "ask": [
       "Bash(rm -rf:*)",
       "Bash(rm -r:*)",
@@ -49,7 +21,6 @@
       "Bash(git reset --hard:*)",
       "Bash(git checkout -- .:*)",
       "Bash(git clean -f:*)",
-      "Bash(git clean -fd:*)",
       "Bash(git branch -D:*)",
       "Bash(git stash drop:*)",
       "Bash(git stash clear:*)"
@@ -58,14 +29,20 @@
   },
   "enabledPlugins": {
     "swift-lsp@claude-plugins-official": true,
-    "rust-analyzer-lsp@claude-plugins-official": true,
-    "warp@claude-code-warp": true
+    "swift-concurrency@swift-concurrency-agent-skill": true,
+    "swiftui-expert@swiftui-expert-skill": true
   },
   "extraKnownMarketplaces": {
-    "claude-code-warp": {
+    "swift-concurrency-agent-skill": {
       "source": {
         "source": "github",
-        "repo": "warpdotdev/claude-code-warp"
+        "repo": "AvdLee/Swift-Concurrency-Agent-Skill"
+      }
+    },
+    "swiftui-expert-skill": {
+      "source": {
+        "source": "github",
+        "repo": "AvdLee/SwiftUI-Agent-Skill"
       }
     }
   }

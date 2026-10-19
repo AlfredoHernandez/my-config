@@ -1,6 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/claude-settings.sh"
+
 # Error handler - shows where the error occurred
 trap 'echo "Error: Command failed at line $LINENO. Exit code: $?" >&2' ERR
 
@@ -677,7 +679,33 @@ install_claude_config() {
 # Function to install Claude Code settings
 install_claude_settings() {
     print_header "Claude Code Settings"
-    install_or_update_file "claude/settings.json" "$HOME/.claude/settings.json" "Claude settings"
+    local src="claude/settings.json"
+    local dest="$HOME/.claude/settings.json"
+
+    if [[ ! -f "$dest" ]]; then
+        install_or_update_file "$src" "$dest" "Claude settings"
+        return
+    fi
+
+    if ! command -v jq &>/dev/null; then
+        print_warning "jq not found: skipping Claude settings merge (brew install jq)"
+        return
+    fi
+
+    local merged
+    merged="$(mktemp)"
+    claude_settings_merge_owned "$dest" "$src" > "$merged"
+
+    if claude_settings_equal "$merged" "$dest"; then
+        print_success "Claude settings already up to date"
+    elif $DRY_RUN; then
+        print_dry_run "Merge shared keys into Claude settings (local keys are kept)"
+    else
+        cp "$dest" "$dest.bak"
+        cp "$merged" "$dest"
+        print_updated "Claude settings merged (backup: $dest.bak)"
+    fi
+    rm -f "$merged"
 }
 
 # Function to install Claude agents

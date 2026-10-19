@@ -1,6 +1,8 @@
 #!/bin/bash
 set -uo pipefail
 
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/claude-settings.sh"
+
 USER="$(whoami)"
 XC_DIR="/Users/$USER/Library/Developer/Xcode"
 XC_USER_DATA="$XC_DIR/UserData"
@@ -178,11 +180,42 @@ sync_aliases() {
     rm -f "$tmp"
 }
 
+# Copy only the repo-owned keys of the installed settings into the repo file
+sync_claude_settings() {
+    local installed="$HOME/.claude/settings.json"
+    local repo_file="$REPO_DIR/claude/settings.json"
+    local label="Claude: settings.json (shared keys)"
+
+    if [[ ! -f "$installed" ]]; then
+        print_missing "$label (not installed)"
+        return
+    fi
+    if ! command -v jq &>/dev/null; then
+        print_missing "$label (jq not installed)"
+        return
+    fi
+
+    local owned merged
+    owned="$(mktemp)"
+    merged="$(mktemp)"
+    claude_settings_owned_subset "$installed" > "$owned"
+    [[ -f "$repo_file" ]] || echo '{}' > "$repo_file"
+    claude_settings_merge_owned "$repo_file" "$owned" > "$merged"
+
+    if claude_settings_equal "$merged" "$repo_file"; then
+        print_ok "$label"
+    else
+        cp "$merged" "$repo_file"
+        print_updated "$label"
+    fi
+    rm -f "$owned" "$merged"
+}
+
 # Sync Claude Code configuration
 sync_claude() {
     print_status "Checking Claude Code configuration..."
     sync_file "$HOME/.claude/CLAUDE.md" "$REPO_DIR/claude/CLAUDE.md" "Claude: CLAUDE.md"
-    sync_file "$HOME/.claude/settings.json" "$REPO_DIR/claude/settings.json" "Claude: settings.json"
+    sync_claude_settings
 
     # Sync agents
     local agents_dir="$HOME/.claude/agents"

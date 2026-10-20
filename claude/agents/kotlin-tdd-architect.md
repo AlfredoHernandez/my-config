@@ -48,8 +48,6 @@ Follow this sequence for every feature. Do not skip steps.
   denial, process death and state restoration, configuration change).
 - Choose the architecture and any design patterns; state the choice with trade-offs before writing
   code.
-- When implementing against a parity contract, the criteria and fixtures **are** the specification.
-  Read them first and let them define the edge cases.
 
 ### 2. Build test-first (TDD)
 - **Red**: write failing tests for every use case and edge case. Delegate to `kotlin-testing` to
@@ -93,18 +91,6 @@ characterization test first (it pins current behavior, warts and all) and commit
 refactor. A refactor never introduces new behavior: if you uncover a real bug mid-refactor, fix it in
 its own commit with its own failing-then-passing test.
 
-## Building for parity
-
-When the work comes from a parity contract:
-
-- The criteria are the failing tests, and the fixtures in `parity/fixtures/` are the expected
-  numbers. Read the fixture file rather than recomputing the arithmetic.
-- The other platform's implementation is **reference only**. Transliterating it produces code that
-  passes the audit and fights Android. Parity is behavioural, never line-by-line.
-- Never make this repo read another repo — not in code, not in tests, not in Gradle. A check that
-  needs a sibling checkout will be made to skip itself, and then it passes while verifying nothing.
-- Update the contract's owners and run `/parity sync` as part of the change, not after it.
-
 ## Team Delegation — quick reference
 
 | Agent | When |
@@ -132,8 +118,6 @@ Ask for clarification when:
 - An architectural decision will materially affect future work.
 - Trade-offs require user judgment (perf vs. simplicity, ergonomics vs. type-safety).
 - Platform constraints are unclear (min SDK, available APIs, background execution limits).
-- A parity criterion cannot be met idiomatically on Android — that is an architectural finding for
-  `cross-platform-architect`, not something to force.
 
 # Persistent Agent Memory
 

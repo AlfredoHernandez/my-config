@@ -507,6 +507,14 @@ add_aliases_to_zshrc() {
     fi
 }
 
+# A failed step reports itself and must not stop the steps after it: the summary shows the count.
+# A step that fails without reporting it is counted here
+run_step() {
+    local failed_before=$FAILED
+    "$@" && return 0
+    [[ $FAILED -gt $failed_before ]] || print_fail "$1 failed"
+}
+
 # Main installation process
 print_banner "🚀 My Development Configuration Setup"
 if $DRY_RUN; then
@@ -534,67 +542,67 @@ print_info "Starting installation process..."
 
 # Check and install Homebrew
 if should_install "homebrew" "$INSTALL_HOMEBREW" "$SKIP_HOMEBREW"; then
-    install_homebrew
+    run_step install_homebrew
 fi
 
 if should_install "tools" "$INSTALL_TOOLS" "$SKIP_TOOLS"; then
-    install_tools
+    run_step install_tools
 fi
 
 # Check and install JetBrains Mono Nerd Font
 if should_install "font" "$INSTALL_FONT" "$SKIP_FONT"; then
-    install_jetbrains_mono_nerd_font
+    run_step install_jetbrains_mono_nerd_font
 fi
 
 # Install SwiftFormat configuration
 if should_install "swiftformat-config" "$INSTALL_SWIFTFORMAT_CONFIG" "$SKIP_SWIFTFORMAT_CONFIG"; then
-    install_swiftformat_config
+    run_step install_swiftformat_config
 fi
 
 # Install Claude Code configuration
 if should_install "claude" "$INSTALL_CLAUDE" "$SKIP_CLAUDE"; then
-    install_claude_config
+    run_step install_claude_config
 fi
 
 # Install Claude agents
 if should_install "claude" "$INSTALL_CLAUDE" "$SKIP_CLAUDE"; then
-    install_claude_agents
+    run_step install_claude_agents
 fi
 
 # Install Claude skills
 if should_install "claude" "$INSTALL_CLAUDE" "$SKIP_CLAUDE"; then
-    install_claude_skills
+    run_step install_claude_skills
 fi
 
 # Install Claude Code settings
 if should_install "claude" "$INSTALL_CLAUDE" "$SKIP_CLAUDE"; then
-    install_claude_settings
+    run_step install_claude_settings
 fi
 
 # Install custom scripts
 if should_install "scripts" "$INSTALL_SCRIPTS" "$SKIP_SCRIPTS"; then
-    install_custom_scripts
+    run_step install_custom_scripts
 fi
 
 # Install aliases and source them from .zshrc
 if should_install "aliases" "$INSTALL_ALIASES" "$SKIP_ALIASES"; then
     print_header "Shell Configuration"
-    add_aliases_to_zshrc
+    run_step add_aliases_to_zshrc
 fi
 
 # XCode templates
 if should_install "templates" "$INSTALL_TEMPLATES" "$SKIP_TEMPLATES"; then
-    install_xcode_templates
+    run_step install_xcode_templates
 fi
 
 # Xcode themes
 if should_install "themes" "$INSTALL_THEMES" "$SKIP_THEMES"; then
-    install_xcode_themes
+    run_step install_xcode_themes
 fi
 
 # Xcode Header
 if should_install "header" "$INSTALL_HEADER" "$SKIP_HEADER"; then
-    install_xcode_header
+    run_step install_xcode_header
 fi
 
 print_selected_components() {

@@ -198,8 +198,8 @@ sync_claude_settings() {
     local owned merged
     owned="$(mktemp)"
     merged="$(mktemp)"
-    claude_settings_owned_subset "$installed" > "$owned"
     [[ -f "$repo_file" ]] || echo '{}' > "$repo_file"
+    claude_settings_owned_subset "$installed" "$repo_file" > "$owned"
     claude_settings_merge_owned "$repo_file" "$owned" > "$merged"
 
     if claude_settings_equal "$merged" "$repo_file"; then

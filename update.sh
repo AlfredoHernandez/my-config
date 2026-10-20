@@ -398,7 +398,6 @@ update_font() {
     print_skip "Font update skipped"
 }
 
-# Print summary
 # Each skill is a directory, so it is compared and copied as a whole tree
 update_claude_skills() {
     local skills_src="$SCRIPT_DIR/claude/skills"
@@ -408,6 +407,7 @@ update_claude_skills() {
 
     local skills_changed=0
     for skill in "$skills_src"/*/; do
+        [[ -d "$skill" ]] || continue
         local skill_name
         skill_name="$(basename "$skill")"
         if diff -rq -x __pycache__ -x .DS_Store "$skill" "$skills_dest/$skill_name" >/dev/null 2>&1; then
@@ -417,8 +417,8 @@ update_claude_skills() {
         if $CHECK_ONLY; then
             print_check "Skill $skill_name has changes"
         else
-            mkdir -p "$skills_dest/$skill_name"
-            cp -R "$skill" "$skills_dest/$skill_name/"
+            mkdir -p "$skills_dest"
+            rsync -a --delete --exclude __pycache__ --exclude .DS_Store "$skill" "$skills_dest/$skill_name/"
         fi
     done
 

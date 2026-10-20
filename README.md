@@ -147,7 +147,7 @@ Installs or updates all components from the repo to your system. If a file alrea
 
 ### `update.sh` - Update
 
-Updates installed components to their latest versions. Fast-forwards `main` from `origin/main` (skipped on any other branch), upgrades eza and SwiftFormat, and applies the repo's configuration with the same steps as `install.sh` (shared in `lib/config-install.sh`): SwiftFormat config, `CLAUDE.md`, Claude agents, skills and settings, custom scripts, Xcode templates, themes and the header template. Missing files are installed too, including components skipped at install time, so every Mac ends up with the same configuration. Aliases are not updated, because they also change `~/.zshrc`; run `install.sh --only-aliases` for those.
+Updates installed components to their latest versions. Fast-forwards `main` from `origin/main` (skipped on any other branch); when the pull brings new commits, it restarts itself once so the remaining steps run the new version of the scripts. It then upgrades eza and SwiftFormat, and applies the repo's configuration with the same steps as `install.sh` (shared in `lib/config-install.sh`): SwiftFormat config, `CLAUDE.md`, Claude agents, skills and settings, custom scripts, Xcode templates, themes and the header template. Missing files are installed too, including components skipped at install time, so every Mac ends up with the same configuration. Aliases are not updated, because they also change `~/.zshrc`; run `install.sh --only-aliases` for those.
 
 ```bash
 ./update.sh            # Update everything

@@ -47,7 +47,7 @@ Fixes #123
 ### Shell Scripts
 
 - Use `#!/bin/bash` shebang
-- Add `set -euo pipefail` for error handling
+- Add `set -euo pipefail` for error handling. Scripts that must keep going after a failed step and report it at the end (`sync.sh`, `update.sh`, `uninstall.sh`) use `set -uo pipefail`; `health-check.sh` uses neither so every check runs
 - Quote all variables: `"$VAR"` not `$VAR`
 - Use `[[ ]]` for conditionals (bash-specific)
 - Add comments for non-obvious logic
@@ -64,8 +64,12 @@ Fixes #123
 ```
 my-config/
 ├── install.sh           # Main installation script
+├── update.sh            # Update tools and copy repo changes to the system
 ├── sync.sh              # Sync installed config back to repo
+├── uninstall.sh         # Remove installed components
 ├── health-check.sh      # Verify installation status
+├── lib/
+│   └── claude-settings.sh  # Claude settings merge shared by install.sh and sync.sh
 ├── config/              # Configuration files
 │   ├── aliases.zsh      # Shell aliases
 │   └── swiftformat.txt  # SwiftFormat configuration
@@ -74,7 +78,7 @@ my-config/
 │   ├── CLAUDE.md        # Global instructions
 │   ├── settings.json    # Claude Code settings
 │   ├── agents/          # Custom AI agents
-│   └── skills/          # Custom skills (one directory per skill)
+│   └── skills/          # Optional, not tracked yet: custom skills (one directory per skill)
 ├── Themes/              # Xcode color themes
 ├── Templates/           # Xcode file templates
 └── Headers/             # Xcode header templates

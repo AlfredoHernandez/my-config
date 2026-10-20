@@ -271,9 +271,9 @@ print_summary() {
     echo ""
 
     if [[ $UPDATED -gt 0 ]]; then
-        echo -e "${GREEN}Configuration updated!${NC} Run the following to save your changes:"
+        echo -e "${GREEN}Configuration updated!${NC} Review the changes, then stage and commit them by path:"
         echo ""
-        echo -e "  ${WHITE}git add -A && git commit -m \"Update configuration backup\" && git push${NC}"
+        echo -e "  ${WHITE}git status && git diff${NC}"
         echo ""
     else
         echo -e "${CYAN}Everything is up to date. No changes needed.${NC}"

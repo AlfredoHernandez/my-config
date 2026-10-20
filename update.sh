@@ -22,6 +22,7 @@ NC='\033[0m'
 
 # Flags
 CHECK_ONLY=false
+DRY_RUN=false
 UPDATE_ALL=true
 UPDATE_REPO=false
 UPDATE_TOOLS=false
@@ -34,18 +35,19 @@ SKIPPED=0
 FAILED=0
 
 print_status() { echo -e "${BLUE}[*]${NC} $1"; }
-print_success() { echo -e "${GREEN}[✓]${NC} $1"; ((UPDATED++)); }
-print_skip() { echo -e "${YELLOW}[−]${NC} $1"; ((SKIPPED++)); }
-print_fail() { echo -e "${RED}[✗]${NC} $1"; ((FAILED++)); }
+print_success() { echo -e "${GREEN}[✓]${NC} $1"; UPDATED=$((UPDATED + 1)); }
+print_skip() { echo -e "${YELLOW}[−]${NC} $1"; SKIPPED=$((SKIPPED + 1)); }
+print_fail() { echo -e "${RED}[✗]${NC} $1"; FAILED=$((FAILED + 1)); }
 print_info() { echo -e "${CYAN}[i]${NC} $1"; }
 print_header() { echo -e "\n${WHITE}=== $1 ===${NC}"; }
 print_check() { echo -e "${CYAN}[CHECK]${NC} $1"; }
 print_warning() { echo -e "${YELLOW}[!]${NC} $1"; }
 
-report_unchanged() { print_skip "$1"; }
+report_unchanged() { SKIPPED=$((SKIPPED + 1)); }
 report_changed() { print_success "$1"; }
 report_planned() { print_check "$1"; }
 report_warning() { print_warning "$1"; }
+report_failure() { print_fail "$1"; }
 
 show_help() {
     echo "Usage: ./update.sh [OPTIONS]"

@@ -36,8 +36,7 @@ This repository contains my personal development configuration that I use across
   - `swift-testing` - Expert in Swift Testing framework and TDD
   - `swift-docs` - Swift documentation specialist
   - `kotlin-testing` - Kotlin/Android testing expert
-- **Custom Skills** - Skill directories (each with a `SKILL.md`) installed to `~/.claude/skills/`:
-  - `parity` - Keeps iOS / Android / Flutter / React Native apps at feature parity
+- **Custom Skills** - Skill directories (each with a `SKILL.md`) installed to `~/.claude/skills/`
 
 ### 🔤 Fonts
 - **JetBrains Mono Nerd Font** - Programming font with ligatures and icons

@@ -3,6 +3,7 @@
 USER="$(whoami)"
 XC_DIR="/Users/$USER/Library/Developer/Xcode"
 XC_USER_DATA="$XC_DIR/UserData"
+REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # Colors for output
 RED='\033[0;31m'
@@ -336,21 +337,22 @@ check_claude_agents() {
 check_claude_skills() {
     print_header "Claude Skills"
     local skills_dir="$HOME/.claude/skills"
-    local skill_names=()
+    local tracked=false
 
-    for skill_file in "$skills_dir"/*/SKILL.md; do
-        [ -f "$skill_file" ] && skill_names+=("$(basename "$(dirname "$skill_file")")")
+    for skill in "$REPO_DIR"/claude/skills/*/; do
+        [ -d "$skill" ] || continue
+        tracked=true
+        local skill_name
+        skill_name="$(basename "$skill")"
+        if [ -f "$skills_dir/$skill_name/SKILL.md" ]; then
+            print_pass "Claude skill installed: $skill_name"
+        else
+            print_fail "Claude skill not installed: $skill_name"
+            print_info "Run './install.sh --only-claude' to install it"
+        fi
     done
 
-    if [ "${#skill_names[@]}" -gt 0 ]; then
-        print_pass "Claude skills found: ${#skill_names[@]} skill(s)"
-        for skill_name in "${skill_names[@]}"; do
-            print_info "  ✓ $skill_name"
-        done
-    else
-        print_warning "No Claude skills found"
-        print_info "Run './install.sh' to install skills"
-    fi
+    $tracked || print_info "No Claude skills tracked in the repo"
 }
 
 # Check for Xcode installation

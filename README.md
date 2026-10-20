@@ -31,7 +31,7 @@ This repository contains my personal development configuration that I use across
 
 ### 🤖 Claude Code Integration
 - **Global Configuration** - Custom instructions for Claude Code in `~/.claude/CLAUDE.md`
-- **Settings** - Shared permissions, attribution and plugins. `install.sh` merges only these keys into `~/.claude/settings.json` (backup in `settings.json.bak`) and keeps local keys such as hooks and preferences; `sync.sh` copies only these keys back. For plugins and marketplaces the repo owns only the entries it lists, so a plugin enabled on one machine is kept there and is not copied back. The merge needs [jq](https://formulae.brew.sh/formula/jq) (`brew install jq`); without it the merge is skipped
+- **Settings** - Shared permissions, attribution, plugins and the `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` env var. `install.sh` merges only these keys into `~/.claude/settings.json` (backup in `settings.json.bak`) and keeps local keys such as hooks and preferences; `sync.sh` copies only these keys back. For plugins and marketplaces the repo owns only the entries it lists, so a plugin enabled on one machine is kept there and is not copied back. The merge needs [jq](https://formulae.brew.sh/formula/jq) (`brew install jq`); without it the merge is skipped
 - **Custom Agents** - Specialized AI assistants for common tasks:
   - `code-review` - Read-only senior code reviewer that reports findings and hand-offs
   - `design-patterns` - GoF design patterns expert

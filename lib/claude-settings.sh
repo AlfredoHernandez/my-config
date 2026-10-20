@@ -2,6 +2,7 @@
 # Shared by install.sh and sync.sh. The repo owns only these keys of
 # ~/.claude/settings.json; everything else (hooks, autoMode, preferences) stays machine-local.
 CLAUDE_SETTINGS_OWNED_PATHS='[
+  ["env", "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS"],
   ["attribution"],
   ["permissions", "allow"],
   ["permissions", "ask"]

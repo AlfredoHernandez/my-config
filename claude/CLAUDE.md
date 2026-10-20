@@ -33,7 +33,7 @@
 
 # Development Workflow
 
-- Run the tests locally only when the feature is ready and before creating the PR, not after each commit or step
+- Do TDD with fast tests (unit tests): run the new or modified tests first, then the full suite of fast tests. Run slow tests (UI, integration, screenshot, end-to-end) only when the feature is ready and before creating the PR, not after each commit or step
 - When fixing a bug, write a failing test first, then fix it
 
 # Comments

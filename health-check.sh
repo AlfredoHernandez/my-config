@@ -60,11 +60,13 @@ get_version() {
 check_homebrew() {
     print_header "Homebrew Package Manager"
     if command_exists brew; then
-        local version=$(get_version brew)
+        local version
+        version=$(get_version brew)
         print_pass "Homebrew installed (version $version)"
         
         # Check if Homebrew is up to date
-        local outdated=$(brew outdated 2>/dev/null | wc -l | xargs)
+        local outdated
+        outdated=$(brew outdated 2>/dev/null | wc -l | xargs)
         if [ "$outdated" -gt 0 ]; then
             print_warning "$outdated outdated package(s) found. Run 'brew upgrade' to update"
         else
@@ -80,7 +82,8 @@ check_homebrew() {
 check_eza() {
     print_header "eza (Modern ls Replacement)"
     if command_exists eza; then
-        local version=$(get_version eza)
+        local version
+        version=$(get_version eza)
         print_pass "eza installed (version $version)"
     else
         print_fail "eza not installed"
@@ -92,7 +95,8 @@ check_eza() {
 check_swiftformat() {
     print_header "SwiftFormat"
     if command_exists swiftformat; then
-        local version=$(get_version swiftformat)
+        local version
+        version=$(get_version swiftformat)
         print_pass "SwiftFormat installed (version $version)"
         
         # Check if config file exists
@@ -127,7 +131,8 @@ check_font() {
        ls "$font_dir"/JetBrainsMonoNFM*.ttf &>/dev/null || \
        ls /Library/Fonts/JetBrainsMonoNerdFont*.ttf &>/dev/null || \
        ls /Library/Fonts/JetBrainsMonoNFM*.ttf &>/dev/null; then
-        local font_count=$(ls "$font_dir"/JetBrainsMonoNerdFont*.ttf "$font_dir"/JetBrainsMonoNFM*.ttf 2>/dev/null | wc -l | xargs)
+        local font_count
+        font_count=$(ls "$font_dir"/JetBrainsMonoNerdFont*.ttf "$font_dir"/JetBrainsMonoNFM*.ttf 2>/dev/null | wc -l | xargs)
         print_pass "JetBrains Mono Nerd Font installed ($font_count font files)"
         print_info "Select it in your terminal profile if icons render as boxes"
     else
@@ -169,7 +174,9 @@ check_aliases() {
         return
     fi
 
-    local alias_count=$(grep -c "^alias" "$alias_source" | xargs)
+    local alias_count
+
+    alias_count=$(grep -c "^alias" "$alias_source" | xargs)
     print_info "Found $alias_count aliases"
 
     for alias_name in gl gp gst gc ll la; do
@@ -213,7 +220,8 @@ check_xcode_themes() {
     local themes_dir="$XC_USER_DATA/FontAndColorThemes"
     
     if [ -d "$themes_dir" ]; then
-        local theme_count=$(ls "$themes_dir"/*.xccolortheme 2>/dev/null | wc -l | xargs)
+        local theme_count
+        theme_count=$(ls "$themes_dir"/*.xccolortheme 2>/dev/null | wc -l | xargs)
         if [ "$theme_count" -gt 0 ]; then
             print_pass "Xcode themes directory found with $theme_count theme(s)"
             
@@ -239,7 +247,8 @@ check_xcode_templates() {
     local templates_dir="$XC_DIR/Templates"
     
     if [ -d "$templates_dir" ]; then
-        local template_count=$(find "$templates_dir" -name "*.xctemplate" 2>/dev/null | wc -l | xargs)
+        local template_count
+        template_count=$(find "$templates_dir" -name "*.xctemplate" 2>/dev/null | wc -l | xargs)
         if [ "$template_count" -gt 0 ]; then
             print_pass "Xcode templates found ($template_count template(s))"
         else
@@ -280,7 +289,8 @@ check_claude_config() {
         print_pass "Claude Code configuration found at ~/.claude/CLAUDE.md"
         
         # Check file size to ensure it's not empty
-        local file_size=$(wc -c < "$claude_config" | xargs)
+        local file_size
+        file_size=$(wc -c < "$claude_config" | xargs)
         if [ "$file_size" -gt 100 ]; then
             print_info "Configuration file size: $file_size bytes"
         else
@@ -298,14 +308,16 @@ check_claude_agents() {
     local agents_dir="$HOME/.claude/agents"
     
     if [ -d "$agents_dir" ]; then
-        local agent_count=$(ls "$agents_dir"/*.md 2>/dev/null | wc -l | xargs)
+        local agent_count
+        agent_count=$(ls "$agents_dir"/*.md 2>/dev/null | wc -l | xargs)
         if [ "$agent_count" -gt 0 ]; then
             print_pass "Claude agents directory found with $agent_count agent(s)"
             
             # List agents
             for agent_file in "$agents_dir"/*.md; do
                 if [ -f "$agent_file" ]; then
-                    local agent_name=$(basename "$agent_file" .md)
+                    local agent_name
+                    agent_name=$(basename "$agent_file" .md)
                     print_info "  ✓ $agent_name"
                 fi
             done
@@ -360,7 +372,8 @@ check_claude_skills() {
 check_xcode() {
     print_header "Xcode"
     if command_exists xcodebuild; then
-        local xcode_version=$(xcodebuild -version | head -n1)
+        local xcode_version
+        xcode_version=$(xcodebuild -version | head -n1)
         print_pass "Xcode installed ($xcode_version)"
     else
         print_warning "Xcode or Command Line Tools not found"
@@ -372,12 +385,15 @@ check_xcode() {
 check_git() {
     print_header "Git Configuration"
     if command_exists git; then
-        local git_version=$(git --version | awk '{print $3}')
+        local git_version
+        git_version=$(git --version | awk '{print $3}')
         print_pass "Git installed (version $git_version)"
         
         # Check Git user configuration
-        local git_user=$(git config --global user.name 2>/dev/null)
-        local git_email=$(git config --global user.email 2>/dev/null)
+        local git_user
+        git_user=$(git config --global user.name 2>/dev/null)
+        local git_email
+        git_email=$(git config --global user.email 2>/dev/null)
         
         if [ -n "$git_user" ]; then
             print_info "Git user: $git_user"
@@ -402,8 +418,11 @@ check_git() {
 print_summary() {
     print_header "Health Check Summary"
     
-    local total=$((PASSED + FAILED + WARNINGS))
-    local health_percentage=$((PASSED * 100 / total))
+    local total
+    
+    total=$((PASSED + FAILED + WARNINGS))
+    local health_percentage
+    health_percentage=$((PASSED * 100 / total))
     
     echo -e "\n${WHITE}Results:${NC}"
     echo -e "  ${GREEN}✓ Passed:${NC}   $PASSED"

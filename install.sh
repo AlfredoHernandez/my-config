@@ -316,7 +316,8 @@ validate_prerequisites() {
     # Check macOS
     print_header "Operating System"
     if [[ "$(uname)" == "Darwin" ]]; then
-        local macos_version=$(sw_vers -productVersion)
+        local macos_version
+        macos_version=$(sw_vers -productVersion) || true
         print_pass "macOS detected (version $macos_version)"
         passed=$((passed + 1))
     else
@@ -325,7 +326,8 @@ validate_prerequisites() {
     fi
 
     # Check architecture
-    local arch=$(uname -m)
+    local arch
+    arch=$(uname -m) || true
     if [[ "$arch" == "arm64" ]]; then
         print_pass "Apple Silicon detected"
     else
@@ -346,7 +348,8 @@ validate_prerequisites() {
 
     # Check Git
     if command -v git &>/dev/null; then
-        local git_version=$(git --version | awk '{print $3}')
+        local git_version
+        git_version=$(git --version | awk '{print $3}') || true
         print_pass "Git installed (version $git_version)"
         passed=$((passed + 1))
     else
@@ -384,7 +387,8 @@ validate_prerequisites() {
 
     # Check disk space
     print_header "Disk Space"
-    local available_space=$(df -g "$HOME" | awk 'NR==2 {print $4}')
+    local available_space
+    available_space=$(df -g "$HOME" | awk 'NR==2 {print $4}') || true
     if [[ "$available_space" -ge 1 ]]; then
         print_pass "Sufficient disk space (${available_space}GB available)"
         passed=$((passed + 1))
@@ -413,7 +417,8 @@ validate_prerequisites() {
 
     # Check shell
     print_header "Shell"
-    local current_shell=$(basename "$SHELL")
+    local current_shell
+    current_shell=$(basename "$SHELL") || true
     if [[ "$current_shell" == "zsh" ]]; then
         print_pass "Using zsh (recommended)"
         passed=$((passed + 1))
@@ -549,7 +554,9 @@ install_jetbrains_mono_nerd_font() {
         return 0
     fi
 
-    local temp_dir=$(mktemp -d)
+    local temp_dir
+
+    temp_dir=$(mktemp -d)
 
     print_status "Downloading JetBrains Mono Nerd Font..."
     curl -fsSL "$font_url" -o "$temp_dir/JetBrainsMono.zip"

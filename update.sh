@@ -120,11 +120,14 @@ update_repo() {
         return 0
     fi
 
-    local current_commit=$(git rev-parse HEAD)
+    local current_commit
+
+    current_commit=$(git rev-parse HEAD)
 
     if $CHECK_ONLY; then
         git fetch origin main --quiet 2>/dev/null || true
-        local behind=$(git rev-list HEAD..origin/main --count 2>/dev/null || echo "0")
+        local behind
+        behind=$(git rev-list HEAD..origin/main --count 2>/dev/null || echo "0")
         if [[ "$behind" -gt 0 ]]; then
             print_check "Repository is $behind commit(s) behind origin/main"
         else
@@ -135,7 +138,8 @@ update_repo() {
 
     print_status "Pulling latest changes..."
     if git pull --ff-only origin main; then
-        local new_commit=$(git rev-parse HEAD)
+        local new_commit
+        new_commit=$(git rev-parse HEAD)
         if [[ "$current_commit" != "$new_commit" ]]; then
             print_success "Repository updated"
             REPO_CHANGED=true
@@ -185,10 +189,12 @@ update_tools() {
 
     if $CHECK_ONLY; then
         print_status "Checking for outdated packages..."
-        local outdated=$(brew outdated 2>/dev/null)
+        local outdated
+        outdated=$(brew outdated 2>/dev/null) || true
         for pkg in "${packages[@]}"; do
             if echo "$outdated" | grep -q "^$pkg"; then
-                local current=$(brew list --versions "$pkg" 2>/dev/null | awk '{print $2}')
+                local current
+                current=$(brew list --versions "$pkg" 2>/dev/null | awk '{print $2}') || true
                 print_check "$pkg is outdated (current: $current)"
             elif command_exists "$pkg"; then
                 print_info "$pkg is up to date"

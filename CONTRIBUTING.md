@@ -70,6 +70,7 @@ my-config/
 ├── uninstall.sh         # Remove installed components
 ├── health-check.sh      # Verify installation status
 ├── lib/
+│   ├── common.sh           # Colors, Xcode paths and output helpers shared by every script
 │   ├── config-install.sh   # Configuration copy steps shared by install.sh and update.sh
 │   ├── claude-settings.sh  # Claude settings merge shared by install.sh, update.sh and sync.sh
 │   └── retired-entries.sh  # Agents and skills deleted from the repo, read from git history
@@ -92,7 +93,7 @@ my-config/
 Before submitting:
 
 1. Run `./install.sh --dry-run` to preview changes
-2. Test on a clean environment if possible
+2. Test on a clean environment: every script writes under `$HOME`, including the Xcode folders, so `HOME="$(mktemp -d)" ./install.sh --skip-homebrew --skip-tools --skip-font` runs for real without touching your machine
 3. Run `./health-check.sh` to verify installation
 4. Ensure scripts work on both Intel and Apple Silicon Macs
 

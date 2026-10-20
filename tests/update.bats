@@ -1,3 +1,5 @@
+#!/usr/bin/env bats
+
 load test_helper
 
 # A bare origin and a clone of it on main, both built from the working tree, so update.sh can pull
@@ -90,6 +92,17 @@ push_update_with_marker() {
     push_update_with_marker NEW_VERSION
 
     MY_CONFIG_UPDATE_RESTARTED_FROM=deadbeef run_script "$LOCAL_REPO/update.sh" --repo --font
+
+    [ "$status" -eq 0 ]
+    grep -q "Pulling latest changes" <<< "$output"
+    [ "$(git -C "$LOCAL_REPO" rev-parse HEAD)" = "$(git -C "$GIT_DIR_ROOT/origin.git" rev-parse main)" ]
+}
+
+@test "a restart marker naming the current commit falls back to a normal pull" {
+    make_fake_origin
+    push_update_with_marker NEW_VERSION
+
+    MY_CONFIG_UPDATE_RESTARTED_FROM="$(git -C "$LOCAL_REPO" rev-parse HEAD)" run_script "$LOCAL_REPO/update.sh" --repo --font
 
     [ "$status" -eq 0 ]
     grep -q "Pulling latest changes" <<< "$output"

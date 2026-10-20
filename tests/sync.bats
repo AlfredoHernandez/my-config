@@ -1,8 +1,9 @@
+#!/usr/bin/env bats
+
 load test_helper
 
 setup() {
-    export HOME="$BATS_TEST_TMPDIR/home"
-    mkdir -p "$HOME"
+    sandbox_home
     REPO_COPY="$(copy_repo)"
     "$REPO_COPY/install.sh" --only-claude --no-verify >/dev/null 2>&1
 }

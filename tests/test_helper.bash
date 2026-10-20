@@ -2,12 +2,40 @@
 # Tests that write into the repo (sync.sh) or pull it (update.sh) work on a copy of it.
 
 REPO_DIR="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
-export HOMEBREW_NO_AUTO_UPDATE=1
 
-setup() {
+# Test files that define their own setup must call this first
+sandbox_home() {
     export HOME="$BATS_TEST_TMPDIR/home"
     mkdir -p "$HOME"
+    [[ $HOME == "$BATS_TEST_TMPDIR"/* ]] || { echo "HOME is not sandboxed" >&2; return 1; }
+
+    # Git hooks export these, and they would point the tests' git commands at the real repo
+    unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR
     unset MY_CONFIG_UPDATE_RESTARTED_FROM
+    export XDG_CONFIG_HOME="$HOME/.config" GIT_CONFIG_NOSYSTEM=1
+
+    # Homebrew and the font download are system-wide or networked: stubs log the call and fail
+    STUB_LOG="$BATS_TEST_TMPDIR/stub-calls.log"
+    mkdir -p "$BATS_TEST_TMPDIR/bin"
+    local tool
+    for tool in brew curl; do
+        printf '#!/bin/bash\necho "%s $*" >> "%s"\nexit 1\n' "$tool" "$STUB_LOG" > "$BATS_TEST_TMPDIR/bin/$tool"
+        chmod +x "$BATS_TEST_TMPDIR/bin/$tool"
+    done
+    export PATH="$BATS_TEST_TMPDIR/bin:$PATH"
+}
+
+setup() {
+    sandbox_home
+}
+
+# Read-only brew calls (the health check's) are fine; anything that changes the system is not
+teardown() {
+    if grep -qE '^brew (install|upgrade|uninstall|reinstall|tap)|^curl' "$STUB_LOG" 2>/dev/null; then
+        echo "a system-wide step ran:" >&2
+        cat "$STUB_LOG" >&2
+        return 1
+    fi
 }
 
 # Like bats' run, with stderr merged into $output and colors removed
@@ -20,10 +48,15 @@ write_settings() {
     printf '%s\n' "$1" > "$HOME/.claude/settings.json"
 }
 
-# Copies the working tree, uncommitted changes and git history included
+# Copies the working tree with its git history, and commits any uncommitted changes in the copy,
+# so `git status` there shows only what the test changed
 copy_repo() {
     local dest="$BATS_TEST_TMPDIR/repo"
-    rsync -a --exclude .codegraph "$REPO_DIR/" "$dest/"
+    git clone -q --no-hardlinks "$REPO_DIR" "$dest"
+    rsync -a --exclude .git --exclude .codegraph "$REPO_DIR/" "$dest/"
+    git -C "$dest" add -A
+    git -C "$dest" -c user.name=test -c user.email=test@example.com -c core.hooksPath=/dev/null \
+        commit -qm "working tree" --allow-empty
     echo "$dest"
 }
 

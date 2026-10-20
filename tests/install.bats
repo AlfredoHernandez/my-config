@@ -1,3 +1,5 @@
+#!/usr/bin/env bats
+
 load test_helper
 
 @test "installs the Claude configuration into an empty HOME" {
@@ -95,4 +97,25 @@ load test_helper
     [ "$status" -eq 0 ]
     [ ! -e "$HOME/.claude/agents/$retired" ]
     [ -f "$HOME/.claude/agents/my-local.md" ]
+}
+
+@test "the health check runs after an install" {
+    run_script "$REPO_DIR/install.sh" --only-claude
+
+    [ "$status" -eq 0 ]
+    grep -q "Running post-installation verification" <<< "$output"
+}
+
+@test "--no-verify skips the health check" {
+    run_script "$REPO_DIR/install.sh" --only-claude --no-verify
+
+    [ "$status" -eq 0 ]
+    refute_output_matches "Running post-installation verification"
+}
+
+@test "a dry run skips the health check" {
+    run_script "$REPO_DIR/install.sh" --dry-run --only-claude
+
+    [ "$status" -eq 0 ]
+    refute_output_matches "Running post-installation verification"
 }

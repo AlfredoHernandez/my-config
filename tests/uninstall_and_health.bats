@@ -1,3 +1,5 @@
+#!/usr/bin/env bats
+
 load test_helper
 
 @test "uninstall removes only the agents the repo ships" {

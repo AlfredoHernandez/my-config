@@ -108,7 +108,10 @@ unset MY_CONFIG_UPDATE_RESTARTED_FROM
 # Update repository
 update_repo() {
     print_header "Repository Update"
-    cd "$SCRIPT_DIR"
+    if ! cd "$SCRIPT_DIR"; then
+        print_fail "Cannot enter $SCRIPT_DIR"
+        return 1
+    fi
 
     local current_branch
     current_branch="$(git rev-parse --abbrev-ref HEAD)"
@@ -233,7 +236,6 @@ update_font() {
     print_header "Nerd Font"
 
     local font_dir="$HOME/Library/Fonts"
-    local font_url="https://github.com/ryanoasis/nerd-fonts/releases/download/${NERD_FONT_VERSION}/JetBrainsMono.zip"
 
     # Check if font is installed
     if ! ls "$font_dir"/JetBrainsMonoNerdFont*.ttf &>/dev/null && \
@@ -302,7 +304,7 @@ fi
 
 if $UPDATE_ALL || $UPDATE_REPO; then
     if is_restarted_run; then
-        cd "$SCRIPT_DIR"
+        cd "$SCRIPT_DIR" || exit 1
         print_success "Repository updated from $(git rev-parse --short "$RESTARTED_FROM") to $(git rev-parse --short HEAD), running its update.sh"
     else
         update_repo

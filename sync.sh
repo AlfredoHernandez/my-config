@@ -232,20 +232,24 @@ sync_claude() {
     sync_claude_skills
 }
 
-# Sync Claude skills (each skill is a directory with a SKILL.md)
+# Sync only the skills already tracked in the repo, so skills installed by other tools stay out
 sync_claude_skills() {
     local skills_dir="$HOME/.claude/skills"
-    local found=false
+    local tracked=false
 
-    for skill in "$skills_dir"/*/; do
-        [[ -f "$skill/SKILL.md" ]] || continue
+    for skill in "$REPO_DIR"/claude/skills/*/; do
+        [[ -d "$skill" ]] || continue
         local name
         name="$(basename "$skill")"
-        found=true
-        sync_dir "${skill%/}" "$REPO_DIR/claude/skills/$name" "Claude skill: $name"
+        tracked=true
+        if [[ -f "$skills_dir/$name/SKILL.md" ]]; then
+            sync_dir "$skills_dir/$name" "${skill%/}" "Claude skill: $name"
+        else
+            print_missing "Claude skill: $name (not installed)"
+        fi
     done
 
-    $found || print_missing "No Claude skills installed"
+    $tracked || print_ok "No Claude skills tracked in the repo"
 }
 
 # Sync SwiftFormat configuration

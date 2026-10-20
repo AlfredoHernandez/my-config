@@ -1,9 +1,12 @@
+#!/usr/bin/env bats
+
 load test_helper
 
 setup() {
+    sandbox_home
     source "$REPO_DIR/lib/claude-settings.sh"
     source "$REPO_DIR/lib/retired-entries.sh"
-    cd "$BATS_TEST_TMPDIR"
+    cd "$BATS_TEST_TMPDIR" || return 1
     cat > repo.json <<'EOF'
 {
   "attribution": {"commit": ""},
@@ -50,7 +53,26 @@ EOF
     run claude_settings_replaced_values local.json repo.json
 
     [ "$status" -eq 0 ]
-    [ "$output" = '"Bash(local:*)"' ]
+    [ "$output" = 'permissions.allow[]: "Bash(local:*)"' ]
+}
+
+@test "replaced values reports a value that the merge moves to another key" {
+    jq '.permissions.allow = ["Bash(git push --force:*)"] | .permissions.ask = ["Bash"]' repo.json > swapped.json
+
+    run claude_settings_replaced_values swapped.json repo.json
+
+    [ "$status" -eq 0 ]
+    grep -qxF 'permissions.ask[]: "Bash"' <<< "$output"
+    grep -qxF 'permissions.allow[]: "Bash(git push --force:*)"' <<< "$output"
+}
+
+@test "replaced values is empty when the installed file has no shared keys" {
+    echo '{"model":"opus"}' > no-shared.json
+
+    run claude_settings_replaced_values no-shared.json repo.json
+
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
 }
 
 @test "replaced values ignores a value that only moved within a list" {

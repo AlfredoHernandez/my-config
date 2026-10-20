@@ -12,13 +12,14 @@ alias grh='git reset --soft HEAD~1'
 
 # Squash merges make merged branches look unmerged to `git branch --merged`, so this deletes the
 # local branches whose remote branch is gone, as GitHub deletes it when the PR is merged.
+# Branches checked out here or in another worktree have a worktree path, so they are kept.
 # The unalias drops the old cleanup alias, which would win over this function on a re-source.
 unalias cleanup 2>/dev/null
 function cleanup {
     git fetch --prune --quiet || return
     local gone
-    gone=$(git for-each-ref --format='%(HEAD) %(refname:short) %(upstream:track)' refs/heads |
-        awk '$1 != "*" && $2 == "[gone]" {print $1}')
+    gone=$(git for-each-ref --format='%(refname:short) %(upstream:track) %(worktreepath)' refs/heads |
+        awk '$2 == "[gone]" && NF == 2 {print $1}')
     if [[ -z $gone ]]; then
         echo "No local branches whose remote branch was deleted"
         return 0
@@ -29,7 +30,7 @@ function cleanup {
     local reply
     read -r "reply?Delete them? [y/N] "
     [[ $reply == [yY]* ]] || return 0
-    print -r -- "$gone" | xargs git branch -D
+    git branch -D -- ${(f)gone}
 }
 
 # Xcode aliases

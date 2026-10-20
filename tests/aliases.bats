@@ -60,3 +60,13 @@ branches() {
     grep -q "No local branches" <<< "$output"
     [ "$(branches)" = "local main merged open" ]
 }
+
+@test "cleanup keeps a branch checked out in another worktree" {
+    git -C "$CLONE" worktree add -q "$BATS_TEST_TMPDIR/worktree" merged
+
+    run_cleanup y
+
+    [ "$status" -eq 0 ]
+    grep -q "No local branches" <<< "$output"
+    [ "$(branches)" = "local main merged open" ]
+}

@@ -228,7 +228,7 @@ Removes installed components from your system.
 | `gca` | `git commit --amend --no-edit` | Amend last commit |
 | `glog` | `git log` | Show commit history |
 | `gcp` | `git cherry-pick` | Cherry-pick commits |
-| `cleanup` | `git fetch --prune`, then `git branch -D` on the branches marked `[gone]` | Delete the local branches whose remote branch was deleted (after a squash merge, for example). Lists them and asks first; keeps the current branch |
+| `cleanup` | `git fetch --prune`, then `git branch -D` on the branches marked `[gone]` | Delete the local branches whose remote branch was deleted (after a squash merge, for example). Lists them and asks first; keeps branches checked out here or in another worktree |
 | `grh` | `git reset --soft HEAD~1` | Soft reset last commit |
 
 ### Xcode & Swift

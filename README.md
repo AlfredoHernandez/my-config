@@ -237,7 +237,7 @@ Removes installed components from your system.
 | `clx` | `CLAUDE_CODE_SUBAGENT_MODEL=opus claude --model opus --effort xhigh --advisor opus` | Hard work: architecture, big refactors, hard bugs. Subagents without `model:` use Opus |
 | `clq` | `CLAUDE_CODE_SUBAGENT_MODEL=haiku claude --model sonnet --effort medium` | Quick questions and exploration. Subagents without `model:` use Haiku |
 
-The custom agents in `claude/agents/` set their own `model:` in the frontmatter, and since Claude Code v2.1.251 that wins over `CLAUDE_CODE_SUBAGENT_MODEL`. So the alias only changes the model of subagents that don't set one, like the built-in `general-purpose`.
+The custom agents in `claude/agents/` set their own `model:` and `effort:` in the frontmatter. Since Claude Code v2.1.251, `model:` wins over `CLAUDE_CODE_SUBAGENT_MODEL`, and `effort:` wins over the session's `--effort`. So the alias only changes the main session and the subagents that don't set these fields, like the built-in `general-purpose`.
 
 ### Enhanced File Listing (eza)
 | Alias | Command | Description |

@@ -26,7 +26,7 @@ show_help() {
     echo "Options:"
     echo "  --dry-run, -n       Preview what would be removed"
     echo "  --force, -f         Skip confirmation prompts"
-    echo "  --tools             Remove the Brewfile packages (jq, eza, swiftformat)"
+    echo "  --tools             Remove the Brewfile packages"
     echo "  --font              Remove JetBrains Mono Nerd Font"
     echo "  --config            Remove SwiftFormat configuration"
     echo "  --aliases           Remove shell aliases"

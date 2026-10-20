@@ -19,12 +19,12 @@ install_font_by_hand() {
     [ "$output" = "$(printf 'jq\neza')" ]
 }
 
-@test "the repo Brewfile has jq, eza and swiftformat" {
+@test "the repo Brewfile has jq, eza, swiftformat and herdr" {
     source "$REPO_DIR/lib/common.sh"
 
     run brewfile_formulae "$REPO_DIR/Brewfile"
 
-    [ "$output" = "$(printf 'jq\neza\nswiftformat')" ]
+    [ "$output" = "$(printf 'jq\neza\nswiftformat\nherdr')" ]
 }
 
 @test "install runs the Brewfile when a package is missing" {
@@ -38,7 +38,7 @@ install_font_by_hand() {
 }
 
 @test "install skips the Brewfile when every package is installed" {
-    fake_brew "jq 1.8.1" "eza 0.23.0" "swiftformat 0.58.0"
+    fake_brew "jq 1.8.1" "eza 0.23.0" "swiftformat 0.58.0" "herdr 0.9.5"
 
     run_script "$REPO_DIR/install.sh" --only-tools --no-verify
 
@@ -51,7 +51,7 @@ install_font_by_hand() {
     run_script "$REPO_DIR/install.sh" --dry-run --only-tools
 
     [ "$status" -eq 0 ]
-    grep -q "Would: Install from the Brewfile: jq eza swiftformat" <<< "$output"
+    grep -q "Would: Install from the Brewfile: jq eza swiftformat herdr" <<< "$output"
 }
 
 @test "install gets the font from its Homebrew cask" {

@@ -49,7 +49,7 @@ This repository contains my personal development configuration that I use across
 - **Deleted agents and skills** - When an agent or skill is deleted from the repo (or renamed), `install.sh` and `update.sh` remove it from `~/.claude`, so every Mac stays in sync. The list comes from git history, so agents and skills that never were in the repo are kept. `sync.sh` does not copy them back, and `health-check.sh` warns if one is still installed
 
 ### 🍺 Homebrew Packages
-- **`Brewfile`** - The command-line tools every Mac gets: [jq](https://formulae.brew.sh/formula/jq), [eza](https://formulae.brew.sh/formula/eza) and [SwiftFormat](https://formulae.brew.sh/formula/swiftformat). `install.sh` installs the missing ones with `brew bundle`, `update.sh` upgrades them and installs any new entry, and `health-check.sh` and `uninstall.sh` read the same list. To add a tool on every Mac, add a `brew "<name>"` line
+- **`Brewfile`** - The command-line tools every Mac gets: [jq](https://formulae.brew.sh/formula/jq), [eza](https://formulae.brew.sh/formula/eza), [SwiftFormat](https://formulae.brew.sh/formula/swiftformat) and [herdr](https://herdr.dev), which keeps coding agents such as Claude Code running in the background and shows which ones are working, blocked or idle. `install.sh` installs the missing ones with `brew bundle`, `update.sh` upgrades them and installs any new entry, and `health-check.sh` and `uninstall.sh` read the same list. To add a tool on every Mac, add a `brew "<name>"` line
 
 ### 🔤 Fonts
 - **JetBrains Mono Nerd Font** - Programming font with ligatures and icons, installed from the [`font-jetbrains-mono-nerd-font`](https://formulae.brew.sh/cask/font-jetbrains-mono-nerd-font) cask. A copy installed by hand is kept, but `update.sh` can upgrade only the cask
@@ -75,7 +75,7 @@ source ~/.zshrc
 The `install.sh` script automatically handles:
 
 1. **Homebrew Installation** - Installs Homebrew package manager if not present
-2. **Brewfile Tools** - Installs the missing `Brewfile` packages (jq, eza, SwiftFormat) with `brew bundle`
+2. **Brewfile Tools** - Installs the missing `Brewfile` packages with `brew bundle`
 3. **JetBrains Mono Nerd Font** - Installs the font cask, unless the font is already installed
 4. **SwiftFormat Configuration** - Copies custom formatting rules to `~/.swiftformat`
 5. **Claude Code Configuration** - Installs global instructions, custom agents and skills to `~/.claude/`
@@ -137,7 +137,7 @@ Installs or updates all components from the repo to your system. If a file alrea
 | Flag | Component |
 |------|-----------|
 | `--only-homebrew` / `--skip-homebrew` | Homebrew package manager |
-| `--only-tools` / `--skip-tools` | `Brewfile` tools (jq, eza, SwiftFormat) |
+| `--only-tools` / `--skip-tools` | `Brewfile` tools |
 | `--only-font` / `--skip-font` | JetBrains Mono Nerd Font |
 | `--only-swiftformat-config` / `--skip-swiftformat-config` | SwiftFormat configuration |
 | `--only-aliases` / `--skip-aliases` | Shell aliases |
@@ -205,7 +205,7 @@ Removes installed components from your system.
 #### Uninstall Specific Components
 
 ```bash
-./uninstall.sh --tools      # Remove the Brewfile packages (jq, eza, swiftformat)
+./uninstall.sh --tools      # Remove the Brewfile packages
 ./uninstall.sh --font       # Remove JetBrains Mono Nerd Font
 ./uninstall.sh --config     # Remove SwiftFormat configuration
 ./uninstall.sh --aliases    # Remove shell aliases

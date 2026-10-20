@@ -48,6 +48,7 @@ Fixes #123
 
 - Use `#!/bin/bash` shebang
 - Add `set -euo pipefail` for error handling. Scripts that must keep going after a failed step and report it at the end (`sync.sh`, `update.sh`, `uninstall.sh`) use `set -uo pipefail`; `health-check.sh` uses neither so every check runs
+- `update.sh` restarts itself after a pull that brings new commits, passing the old version's arguments and `MY_CONFIG_UPDATE_RESTARTED_FROM`. Keep accepting the flags older versions pass, and keep reading that variable
 - Quote all variables: `"$VAR"` not `$VAR`
 - Use `[[ ]]` for conditionals (bash-specific)
 - Add comments for non-obvious logic

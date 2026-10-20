@@ -29,6 +29,7 @@ UPDATE_TOOLS=false
 UPDATE_CONFIG=false
 UPDATE_FONT=false
 REPO_CHANGED=false
+REPO_PREVIOUS_COMMIT=""
 
 # Counters
 UPDATED=0
@@ -110,6 +111,10 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# Set only by the restart below; cleared so the processes this run starts don't inherit it
+RESTARTED_FROM="${MY_CONFIG_UPDATE_RESTARTED_FROM:-}"
+unset MY_CONFIG_UPDATE_RESTARTED_FROM
+
 command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
@@ -152,6 +157,7 @@ update_repo() {
         if [[ "$current_commit" != "$new_commit" ]]; then
             print_success "Repository updated"
             REPO_CHANGED=true
+            REPO_PREVIOUS_COMMIT="$current_commit"
         else
             print_skip "Repository already up to date"
         fi
@@ -165,9 +171,23 @@ update_repo() {
 restart_if_repo_changed() {
     $REPO_CHANGED || return 0
     $UPDATE_ALL || $UPDATE_TOOLS || $UPDATE_CONFIG || $UPDATE_FONT || return 0
+    if [[ ! -f "$SCRIPT_DIR/update.sh" ]]; then
+        print_warning "update.sh not found after the pull: continuing with the loaded version"
+        return 0
+    fi
     print_info "Restarting with the updated update.sh"
-    export MY_CONFIG_UPDATE_RESTARTED=1
-    exec "$SCRIPT_DIR/update.sh" ${ORIGINAL_ARGS[@]+"${ORIGINAL_ARGS[@]}"}
+    shopt -s execfail
+    MY_CONFIG_UPDATE_RESTARTED_FROM="$REPO_PREVIOUS_COMMIT" \
+        exec "$BASH" "$SCRIPT_DIR/update.sh" ${ORIGINAL_ARGS[@]+"${ORIGINAL_ARGS[@]}"}
+    print_warning "Could not restart update.sh: continuing with the loaded version"
+}
+
+# True only in the run started by restart_if_repo_changed: the marker must name an older
+# commit of the current HEAD, so a stale or hand-set value falls back to a normal pull
+is_restarted_run() {
+    [[ -n "$RESTARTED_FROM" ]] && ! $CHECK_ONLY || return 1
+    [[ "$RESTARTED_FROM" != "$(git -C "$SCRIPT_DIR" rev-parse HEAD)" ]] &&
+        git -C "$SCRIPT_DIR" merge-base --is-ancestor "$RESTARTED_FROM" HEAD 2>/dev/null
 }
 
 # Update Homebrew packages
@@ -287,11 +307,13 @@ print_summary() {
 }
 
 # Main execution
-echo -e "${WHITE}"
-echo "╔════════════════════════════════════════════════════╗"
-echo "║          🔄 Configuration Update Script            ║"
-echo "╚════════════════════════════════════════════════════╝"
-echo -e "${NC}"
+if ! is_restarted_run; then
+    echo -e "${WHITE}"
+    echo "╔════════════════════════════════════════════════════╗"
+    echo "║          🔄 Configuration Update Script            ║"
+    echo "╚════════════════════════════════════════════════════╝"
+    echo -e "${NC}"
+fi
 
 DRY_RUN=$CHECK_ONLY
 
@@ -300,9 +322,9 @@ if $CHECK_ONLY; then
 fi
 
 if $UPDATE_ALL || $UPDATE_REPO; then
-    if [[ -n "${MY_CONFIG_UPDATE_RESTARTED:-}" ]]; then
-        print_header "Repository Update"
-        print_success "Repository updated to $(git -C "$SCRIPT_DIR" rev-parse --short HEAD), running its update.sh"
+    if is_restarted_run; then
+        cd "$SCRIPT_DIR"
+        print_success "Repository updated from $(git rev-parse --short "$RESTARTED_FROM") to $(git rev-parse --short HEAD), running its update.sh"
     else
         update_repo
         restart_if_repo_changed

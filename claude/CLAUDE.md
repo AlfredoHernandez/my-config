@@ -6,7 +6,7 @@
 - When a branch is merged, switch to the repo's default branch and update it. Then delete the merged branch. If git says the branch is not fully merged (squash merges look unmerged), check the merged PR before forcing the delete
 - Never add "Co-Authored-By" trailers to commit messages
 - Do not add "Made by Claude", "Generated with [Claude Code](https://claude.com/claude-code)" or something like that in the commit messages or PR descriptions
-- After completing changes, generate the commit message using the `git-commit-messages` agent
+- When a logical change is complete, commit it right away as an atomic commit, with the message from the `git-commit-messages` agent. Stage files by path, never `git add -A`. Never push (see the push rule) and never amend or rewrite commits unless I ask
 - Commit atomically while working, but push the branch only when the feature is ready, not after each atomic commit
 
 # Pull Requests

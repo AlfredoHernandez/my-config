@@ -34,7 +34,7 @@ show_help() {
     echo "Options:"
     echo "  --dry-run, -n       Preview what would be removed"
     echo "  --force, -f         Skip confirmation prompts"
-    echo "  --tools             Remove Homebrew packages (eza, swiftformat)"
+    echo "  --tools             Remove the Brewfile packages (jq, eza, swiftformat)"
     echo "  --font              Remove JetBrains Mono Nerd Font"
     echo "  --config            Remove SwiftFormat configuration"
     echo "  --aliases           Remove shell aliases"
@@ -129,22 +129,21 @@ remove_tools() {
         return 0
     fi
 
-    local packages=("eza" "swiftformat")
+    local installed formula
+    installed="$(installed_formulae)"
 
-    for pkg in "${packages[@]}"; do
-        if brew list "$pkg" &>/dev/null; then
-            if $DRY_RUN; then
-                print_dry_run "$pkg (brew uninstall)"
-            else
-                print_status "Removing $pkg..."
-                if brew uninstall "$pkg" 2>/dev/null; then
-                    print_success "Removed $pkg"
-                else
-                    print_fail "Failed to remove $pkg"
-                fi
-            fi
+    for formula in $(brewfile_formulae "$REPO_DIR/Brewfile"); do
+        if [[ -z "$(formula_version "$installed" "$formula")" ]]; then
+            print_skip "$formula not installed"
+        elif $DRY_RUN; then
+            print_dry_run "$formula (brew uninstall)"
         else
-            print_skip "$pkg not installed"
+            print_status "Removing $formula..."
+            if brew uninstall "$formula" 2>/dev/null; then
+                print_success "Removed $formula"
+            else
+                print_fail "Failed to remove $formula"
+            fi
         fi
     done
 }
@@ -153,30 +152,35 @@ remove_tools() {
 remove_font() {
     print_header "JetBrains Mono Nerd Font"
 
-    local font_dir="$HOME/Library/Fonts"
-    local fonts_found=false
-
-    # Check for fonts
-    if ls "$font_dir"/JetBrainsMonoNerdFont*.ttf &>/dev/null || \
-       ls "$font_dir"/JetBrainsMonoNFM*.ttf &>/dev/null; then
-        fonts_found=true
+    if nerd_font_cask_installed; then
+        if $DRY_RUN; then
+            print_dry_run "JetBrains Mono Nerd Font (brew uninstall --cask $NERD_FONT_CASK)"
+        elif brew uninstall --cask "$NERD_FONT_CASK"; then
+            print_success "Removed JetBrains Mono Nerd Font"
+        else
+            print_fail "Failed to remove the $NERD_FONT_CASK cask"
+        fi
+        return 0
     fi
 
-    if ! $fonts_found; then
+    local files
+    files="$(nerd_font_files "$HOME/Library/Fonts")"
+    if [[ -z "$files" ]]; then
         print_skip "Font not installed"
         return 0
     fi
 
     if $DRY_RUN; then
-        local count
-        count=$(ls "$font_dir"/JetBrainsMonoNerdFont*.ttf "$font_dir"/JetBrainsMonoNFM*.ttf 2>/dev/null | wc -l | xargs)
-        print_dry_run "JetBrains Mono Nerd Font ($count files)"
-    else
-        print_status "Removing font files..."
-        rm -f "$font_dir"/JetBrainsMonoNerdFont*.ttf 2>/dev/null
-        rm -f "$font_dir"/JetBrainsMonoNFM*.ttf 2>/dev/null
-        print_success "Removed JetBrains Mono Nerd Font"
+        print_dry_run "JetBrains Mono Nerd Font ($(wc -l <<< "$files" | xargs) files)"
+        return 0
     fi
+
+    print_status "Removing font files..."
+    local file
+    while IFS= read -r file; do
+        rm -f "$file" || print_fail "Failed to remove $file"
+    done <<< "$files"
+    print_success "Removed JetBrains Mono Nerd Font"
 }
 
 # Remove SwiftFormat configuration

@@ -37,31 +37,12 @@ print_banner() {
     echo -e "${NC}"
 }
 
-# Function to get version of a command
-get_version() {
-    local cmd=$1
-    case $cmd in
-        brew)
-            brew --version | head -n1 | awk '{print $2}'
-            ;;
-        eza)
-            eza --version | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -n1
-            ;;
-        swiftformat)
-            swiftformat --version
-            ;;
-        *)
-            echo "unknown"
-            ;;
-    esac
-}
-
 # Check Homebrew
 check_homebrew() {
     print_header "Homebrew Package Manager"
     if command_exists brew; then
         local version
-        version=$(get_version brew)
+        version=$(brew --version | head -n1 | awk '{print $2}')
         print_pass "Homebrew installed (version $version)"
         
         # Check if Homebrew is up to date
@@ -78,66 +59,45 @@ check_homebrew() {
     fi
 }
 
-# Check eza
-check_eza() {
-    print_header "eza (Modern ls Replacement)"
-    if command_exists eza; then
-        local version
-        version=$(get_version eza)
-        print_pass "eza installed (version $version)"
-    else
-        print_fail "eza not installed"
-        print_info "Run './install.sh' or 'brew install eza'"
-    fi
-}
+check_brewfile_tools() {
+    print_header "Brewfile Tools"
+    local installed formula version
+    installed="$(installed_formulae)"
 
-# Check SwiftFormat
-check_swiftformat() {
-    print_header "SwiftFormat"
-    if command_exists swiftformat; then
-        local version
-        version=$(get_version swiftformat)
-        print_pass "SwiftFormat installed (version $version)"
-        
-        # Check if config file exists
-        if [ -f "$HOME/.swiftformat" ]; then
-            print_pass "SwiftFormat configuration file found at ~/.swiftformat"
+    for formula in $(brewfile_formulae "$REPO_DIR/Brewfile"); do
+        version="$(formula_version "$installed" "$formula")"
+        if [ -n "$version" ]; then
+            print_pass "$formula installed ($version)"
         else
-            print_fail "SwiftFormat configuration file not found"
-            print_info "Run './install.sh' to install the configuration"
+            print_fail "$formula not installed"
+            print_info "Run './install.sh --only-tools'"
         fi
-    else
-        print_fail "SwiftFormat not installed"
-        print_info "Run './install.sh' or 'brew install swiftformat'"
-    fi
+    done
 }
 
-check_jq() {
-    print_header "jq"
-    if command_exists jq; then
-        print_pass "jq installed"
+check_swiftformat_config() {
+    print_header "SwiftFormat Configuration"
+    if [ -f "$HOME/.swiftformat" ]; then
+        print_pass "SwiftFormat configuration file found at ~/.swiftformat"
     else
-        print_warning "jq not installed: install.sh, update.sh and sync.sh skip the Claude settings merge"
-        print_info "Run 'brew install jq'"
+        print_fail "SwiftFormat configuration file not found"
+        print_info "Run './install.sh --only-swiftformat-config' to install it"
     fi
 }
 
 # Check JetBrains Mono Nerd Font
 check_font() {
     print_header "JetBrains Mono Nerd Font"
-    local font_dir="$HOME/Library/Fonts"
-    
-    if ls "$font_dir"/JetBrainsMonoNerdFont*.ttf &>/dev/null || \
-       ls "$font_dir"/JetBrainsMonoNFM*.ttf &>/dev/null || \
-       ls /Library/Fonts/JetBrainsMonoNerdFont*.ttf &>/dev/null || \
-       ls /Library/Fonts/JetBrainsMonoNFM*.ttf &>/dev/null; then
-        local font_count
-        font_count=$(ls "$font_dir"/JetBrainsMonoNerdFont*.ttf "$font_dir"/JetBrainsMonoNFM*.ttf 2>/dev/null | wc -l | xargs)
+    local font_count
+    font_count=$(nerd_font_files | wc -l | xargs)
+
+    if [ "$font_count" -gt 0 ]; then
         print_pass "JetBrains Mono Nerd Font installed ($font_count font files)"
+        nerd_font_cask_installed || print_info "Installed by hand: './update.sh' can't upgrade it"
         print_info "Select it in your terminal profile if icons render as boxes"
     else
         print_fail "JetBrains Mono Nerd Font not found"
-        print_info "Run './install.sh' to install the font"
+        print_info "Run './install.sh --only-font' to install the font"
     fi
 }
 
@@ -461,9 +421,8 @@ print_banner
 print_info "Starting health check...\n"
 
 check_homebrew
-check_eza
-check_swiftformat
-check_jq
+check_brewfile_tools
+check_swiftformat_config
 check_font
 check_aliases
 check_scripts

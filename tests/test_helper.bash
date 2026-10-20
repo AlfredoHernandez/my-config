@@ -31,11 +31,31 @@ setup() {
 
 # Read-only brew calls (the health check's) are fine; anything that changes the system is not
 teardown() {
-    if grep -qE '^brew (install|upgrade|uninstall|reinstall|tap)|^curl' "$STUB_LOG" 2>/dev/null; then
+    if grep -qE '^brew (install|upgrade|uninstall|reinstall|tap)|^brew bundle( install| --|$)|^curl' "$STUB_LOG" 2>/dev/null; then
         echo "a system-wide step ran:" >&2
         cat "$STUB_LOG" >&2
         return 1
     fi
+}
+
+# Replaces the failing brew stub with one that succeeds and logs to $BREW_LOG, which teardown
+# doesn't check. The arguments are the installed formulae as "name version" lines; installed
+# casks go one per line in $BREW_CASKS
+fake_brew() {
+    BREW_LOG="$BATS_TEST_TMPDIR/brew.log"
+    BREW_CASKS="$BATS_TEST_TMPDIR/brew-casks"
+    local formulae="$BATS_TEST_TMPDIR/brew-formulae"
+    printf '%s\n' "$@" > "$formulae"
+    touch "$BREW_LOG" "$BREW_CASKS"
+    cat > "$BATS_TEST_TMPDIR/bin/brew" <<EOF
+#!/bin/bash
+echo "brew \$*" >> "$BREW_LOG"
+case "\$1 \$2" in
+    "list --formula") cat "$formulae" ;;
+    "list --cask") cat "$BREW_CASKS" ;;
+esac
+exit 0
+EOF
 }
 
 # Like bats' run, with stderr merged into $output and colors removed
@@ -75,6 +95,14 @@ count_files() {
 refute_output_matches() {
     if grep -qE "$1" <<< "$output"; then
         echo "output should not match: $1" >&2
+        return 1
+    fi
+}
+
+refute_brew_called() {
+    if grep -qE "$1" "$BREW_LOG"; then
+        echo "brew should not have been called with: $1" >&2
+        cat "$BREW_LOG" >&2
         return 1
     fi
 }

@@ -11,9 +11,6 @@ source "$REPO_DIR/lib/config-install.sh"
 # Error handler
 trap 'echo "Error: Command failed at line $LINENO. Exit code: $?" >&2' ERR
 
-# Configuration
-NERD_FONT_VERSION="v3.4.0"
-
 # Flags
 CHECK_ONLY=false
 DRY_RUN=false
@@ -185,43 +182,35 @@ update_tools() {
         return 0
     fi
 
-    local packages=("eza" "swiftformat")
+    local brewfile="$REPO_DIR/Brewfile"
 
     if $CHECK_ONLY; then
         print_status "Checking for outdated packages..."
-        local outdated
-        outdated=$(brew outdated 2>/dev/null) || true
-        for pkg in "${packages[@]}"; do
-            if echo "$outdated" | grep -q "^$pkg"; then
-                local current
-                current=$(brew list --versions "$pkg" 2>/dev/null | awk '{print $2}') || true
-                print_check "$pkg is outdated (current: $current)"
-            elif command_exists "$pkg"; then
-                print_info "$pkg is up to date"
+        local installed outdated formula version
+        installed="$(installed_formulae)"
+        outdated="$(brew outdated --formula --quiet 2>/dev/null)" || true
+        for formula in $(brewfile_formulae "$brewfile"); do
+            version="$(formula_version "$installed" "$formula")"
+            if [[ -z "$version" ]]; then
+                print_check "$formula not installed"
+            elif grep -qxF "$formula" <<< "$outdated"; then
+                print_check "$formula is outdated (current: $version)"
+            else
+                print_info "$formula is up to date"
             fi
         done
         return 0
     fi
 
     print_status "Updating Homebrew..."
-    brew update --quiet
+    brew update --quiet || print_warning "brew update failed: upgrading with the current formulae"
 
-    for pkg in "${packages[@]}"; do
-        if command_exists "$pkg"; then
-            if brew outdated | grep -q "^$pkg"; then
-                print_status "Upgrading $pkg..."
-                if brew upgrade "$pkg" 2>/dev/null; then
-                    print_success "Updated $pkg"
-                else
-                    print_fail "Failed to update $pkg"
-                fi
-            else
-                print_skip "$pkg already up to date"
-            fi
-        else
-            print_info "$pkg not installed, skipping"
-        fi
-    done
+    # Also installs the packages missing here, such as ones added to the Brewfile on another Mac
+    if brew bundle install --file="$brewfile" --upgrade; then
+        print_success "Brewfile packages installed and up to date"
+    else
+        print_fail "brew bundle failed: run 'brew bundle install --file=$brewfile' to see why"
+    fi
 }
 
 # Update configuration files with the same steps install.sh runs
@@ -241,28 +230,32 @@ update_config() {
 update_font() {
     print_header "Nerd Font"
 
-    local font_dir="$HOME/Library/Fonts"
-
-    # Check if font is installed
-    if ! ls "$font_dir"/JetBrainsMonoNerdFont*.ttf &>/dev/null && \
-       ! ls "$font_dir"/JetBrainsMonoNFM*.ttf &>/dev/null; then
-        if $CHECK_ONLY; then
-            print_check "JetBrains Mono Nerd Font not installed"
+    if nerd_font_cask_installed; then
+        if ! $CHECK_ONLY; then
+            if brew upgrade --cask "$NERD_FONT_CASK"; then
+                print_success "JetBrains Mono Nerd Font up to date"
+            else
+                print_fail "Could not upgrade the $NERD_FONT_CASK cask"
+            fi
+        elif brew outdated --cask --quiet 2>/dev/null | grep -qxF "$NERD_FONT_CASK"; then
+            print_check "JetBrains Mono Nerd Font is outdated"
         else
-            print_info "Font not installed, run install.sh to install"
+            print_info "JetBrains Mono Nerd Font is up to date"
         fi
         return 0
     fi
 
-    if $CHECK_ONLY; then
-        print_info "JetBrains Mono Nerd Font installed (version check requires reinstall)"
-        print_info "Latest version in config: $NERD_FONT_VERSION"
+    if [[ -z "$(nerd_font_files)" ]]; then
+        if $CHECK_ONLY; then
+            print_check "JetBrains Mono Nerd Font not installed"
+        else
+            print_info "Font not installed: run ./install.sh --only-font"
+        fi
         return 0
     fi
 
-    print_info "Font reinstall not implemented (fonts don't have easy version detection)"
-    print_info "To update: delete fonts from $font_dir and run install.sh"
-    print_skip "Font update skipped"
+    print_skip "JetBrains Mono Nerd Font installed by hand, so Homebrew can't upgrade it"
+    print_info "To switch: delete its files from ~/Library/Fonts and run ./install.sh --only-font"
 }
 
 print_summary() {

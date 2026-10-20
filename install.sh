@@ -11,9 +11,6 @@ cd "$REPO_DIR"
 # Error handler - shows where the error occurred
 trap 'echo "Error: Command failed at line $LINENO. Exit code: $?" >&2' ERR
 
-# Configuration
-NERD_FONT_VERSION="v3.4.0"
-
 # Installation flags (default: install everything)
 DRY_RUN=false
 VALIDATE_ONLY=false
@@ -57,7 +54,7 @@ show_help() {
     echo ""
     echo "Install Specific Components (only installs selected components):"
     echo "  --only-homebrew            Install only Homebrew package manager"
-    echo "  --only-tools               Install only development tools (eza, SwiftFormat)"
+    echo "  --only-tools               Install only the Brewfile tools (jq, eza, SwiftFormat)"
     echo "  --only-font                Install only JetBrains Mono Nerd Font"
     echo "  --only-swiftformat-config  Install only SwiftFormat configuration"
     echo "  --only-aliases             Install only shell aliases"
@@ -96,7 +93,7 @@ list_components() {
     echo ""
     echo "Development Tools:"
     echo "  • homebrew             - Homebrew package manager"
-    echo "  • tools                - eza (modern ls) and SwiftFormat"
+    echo "  • tools                - Brewfile tools: jq, eza (modern ls) and SwiftFormat"
     echo "  • font                 - JetBrains Mono Nerd Font"
     echo "  • swiftformat-config   - SwiftFormat configuration file"
     echo ""
@@ -371,7 +368,7 @@ validate_prerequisites() {
         passed=$((passed + 1))
     else
         print_warning "jq not installed: the Claude settings merge will be skipped"
-        print_info "  Install with: brew install jq"
+        print_info "  Install with: ./install.sh --only-tools"
     fi
 
     # Check network connectivity
@@ -465,8 +462,7 @@ print_banner() {
     echo "║                                                              ║"
     echo "║    Setting up your macOS development environment with:       ║"
     echo "║    • Homebrew package manager                               ║"
-    echo "║    • eza (modern ls replacement)                            ║"
-    echo "║    • SwiftFormat (Swift code formatter)                     ║"
+    echo "║    • jq, eza and SwiftFormat (Brewfile)                     ║"
     echo "║    • JetBrains Mono Nerd Font                               ║"
     echo "║    • Claude Code configuration, agents and skills           ║"
     echo "║    • Custom shell aliases                                   ║"
@@ -501,79 +497,54 @@ install_homebrew() {
     fi
 }
 
-# Function to install eza if not present
-install_eza() {
-    print_header "eza Installation"
-    if ! command_exists eza; then
-        if $DRY_RUN; then
-            print_dry_run "Install eza via Homebrew"
-        else
-            print_status "Installing eza (modern ls replacement)..."
-            brew install eza
-            print_success "eza installed successfully"
-        fi
+install_tools() {
+    print_header "Development Tools (Brewfile)"
+    local missing
+    missing="$(missing_brewfile_formulae "$REPO_DIR/Brewfile" | paste -sd ' ' -)"
+
+    if [[ -z "$missing" ]]; then
+        print_success "Brewfile packages already installed"
+        return 0
+    fi
+    if $DRY_RUN; then
+        print_dry_run "Install from the Brewfile: $missing"
+        return 0
+    fi
+    if ! command_exists brew; then
+        print_fail "Homebrew not installed: run ./install.sh --only-homebrew first"
+        return 0
+    fi
+
+    print_status "Installing from the Brewfile: $missing"
+    if brew bundle install --file="$REPO_DIR/Brewfile" --no-upgrade; then
+        print_success "Brewfile packages installed"
     else
-        print_success "eza already installed"
+        print_fail "brew bundle failed for: $missing"
     fi
 }
 
-# Function to install SwiftFormat if not present
-install_swiftformat() {
-    print_header "SwiftFormat Installation"
-    if ! command_exists swiftformat; then
-        if $DRY_RUN; then
-            print_dry_run "Install SwiftFormat via Homebrew"
-        else
-            print_status "Installing SwiftFormat (Swift code formatter)..."
-            brew install swiftformat
-            print_success "SwiftFormat installed successfully"
-        fi
-    else
-        print_success "SwiftFormat already installed"
-    fi
-}
-
-# Function to install JetBrains Mono Nerd Font
 install_jetbrains_mono_nerd_font() {
     print_header "JetBrains Mono Nerd Font Installation"
-    local font_dir="$HOME/Library/Fonts"
-    local font_url="https://github.com/ryanoasis/nerd-fonts/releases/download/${NERD_FONT_VERSION}/JetBrainsMono.zip"
 
-    # Check if font is already installed
-    if ls "$font_dir"/JetBrainsMonoNerdFont*.ttf &>/dev/null || \
-       ls "$font_dir"/JetBrainsMonoNFM*.ttf &>/dev/null || \
-       ls /Library/Fonts/JetBrainsMonoNerdFont*.ttf &>/dev/null || \
-       ls /Library/Fonts/JetBrainsMonoNFM*.ttf &>/dev/null; then
+    if [[ -n "$(nerd_font_files)" ]]; then
         print_success "JetBrains Mono Nerd Font already installed"
         return 0
     fi
-
     if $DRY_RUN; then
-        print_dry_run "Download JetBrains Mono Nerd Font from GitHub"
-        print_dry_run "Install font files to $font_dir"
+        print_dry_run "Install the $NERD_FONT_CASK cask"
+        return 0
+    fi
+    if ! command_exists brew; then
+        print_fail "Homebrew not installed: run ./install.sh --only-homebrew first"
         return 0
     fi
 
-    local temp_dir
-
-    temp_dir=$(mktemp -d)
-
-    print_status "Downloading JetBrains Mono Nerd Font..."
-    curl -fsSL "$font_url" -o "$temp_dir/JetBrainsMono.zip"
-
-    if [[ $? -ne 0 ]]; then
-        print_warning "Failed to download JetBrains Mono Nerd Font"
-        rm -rf "$temp_dir"
-        return 1
+    print_status "Installing JetBrains Mono Nerd Font..."
+    if brew install --cask "$NERD_FONT_CASK"; then
+        print_success "JetBrains Mono Nerd Font installed successfully"
+    else
+        print_fail "Could not install the $NERD_FONT_CASK cask"
     fi
-
-    print_status "Installing font..."
-    unzip -q "$temp_dir/JetBrainsMono.zip" -d "$temp_dir/JetBrainsMono"
-    mkdir -p "$font_dir"
-    cp "$temp_dir/JetBrainsMono"/*.ttf "$font_dir/"
-
-    rm -rf "$temp_dir"
-    print_success "JetBrains Mono Nerd Font installed successfully"
 }
 
 # Function to add aliases to .zshrc
@@ -615,7 +586,7 @@ if ! $INSTALL_ALL; then
     print_info "Selective installation mode enabled"
     echo -e "${CYAN}Components to install:${NC}"
     $INSTALL_HOMEBREW && echo "  • Homebrew"
-    $INSTALL_TOOLS && echo "  • Development tools (eza, SwiftFormat)"
+    $INSTALL_TOOLS && echo "  • Brewfile tools (jq, eza, SwiftFormat)"
     $INSTALL_FONT && echo "  • JetBrains Mono Nerd Font"
     $INSTALL_SWIFTFORMAT_CONFIG && echo "  • SwiftFormat configuration"
     $INSTALL_ALIASES && echo "  • Shell aliases"
@@ -634,14 +605,8 @@ if should_install "homebrew" "$INSTALL_HOMEBREW" "$SKIP_HOMEBREW"; then
     install_homebrew
 fi
 
-# Check and install eza
 if should_install "tools" "$INSTALL_TOOLS" "$SKIP_TOOLS"; then
-    install_eza
-fi
-
-# Check and install SwiftFormat
-if should_install "tools" "$INSTALL_TOOLS" "$SKIP_TOOLS"; then
-    install_swiftformat
+    install_tools
 fi
 
 # Check and install JetBrains Mono Nerd Font
@@ -703,7 +668,7 @@ fi
 print_selected_components() {
     local marker="$1"
     should_install "homebrew" "$INSTALL_HOMEBREW" "$SKIP_HOMEBREW" && echo -e "  $marker Homebrew package manager"
-    should_install "tools" "$INSTALL_TOOLS" "$SKIP_TOOLS" && echo -e "  $marker eza and SwiftFormat"
+    should_install "tools" "$INSTALL_TOOLS" "$SKIP_TOOLS" && echo -e "  $marker Brewfile tools (jq, eza, SwiftFormat)"
     should_install "font" "$INSTALL_FONT" "$SKIP_FONT" && echo -e "  $marker JetBrains Mono Nerd Font"
     should_install "swiftformat-config" "$INSTALL_SWIFTFORMAT_CONFIG" "$SKIP_SWIFTFORMAT_CONFIG" && echo -e "  $marker SwiftFormat configuration"
     should_install "claude" "$INSTALL_CLAUDE" "$SKIP_CLAUDE" && echo -e "  $marker Claude Code configuration, agents and skills"

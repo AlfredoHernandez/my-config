@@ -100,7 +100,7 @@ install_claude_settings() {
     fi
 
     if ! command -v jq &>/dev/null; then
-        report_warning "jq not found: skipping Claude settings merge (brew install jq)"
+        report_warning "jq not found: skipping Claude settings merge (./install.sh --only-tools)"
         return
     fi
 

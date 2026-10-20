@@ -47,6 +47,7 @@ setup() {
 
     [ "$status" -eq 0 ]
     grep -q "$retired (deleted from the repo" <<< "$output"
+    grep -qE "Behind the repo: +1" <<< "$output"
     [ ! -e "$REPO_COPY/claude/agents/$retired" ]
 }
 

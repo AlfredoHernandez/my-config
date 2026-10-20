@@ -245,10 +245,10 @@ sync_swiftformat() {
 print_summary() {
     echo ""
     print_title "Backup Summary"
-    echo -e "  ${GREEN}↑ Updated:${NC}       $UPDATED"
-    echo -e "  ${GREEN}✓ Up to date:${NC}    $SUCCEEDED"
-    echo -e "  ${YELLOW}− Missing:${NC}       $SKIPPED"
-    echo -e "  ${YELLOW}! Newer in repo:${NC} $WARNINGS"
+    echo -e "  ${GREEN}↑ Updated:${NC}         $UPDATED"
+    echo -e "  ${GREEN}✓ Up to date:${NC}      $SUCCEEDED"
+    echo -e "  ${YELLOW}− Missing:${NC}         $SKIPPED"
+    echo -e "  ${YELLOW}! Behind the repo:${NC} $WARNINGS"
     print_rule
     echo ""
 

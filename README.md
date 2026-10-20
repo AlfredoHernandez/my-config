@@ -30,13 +30,21 @@ This repository contains my personal development configuration that I use across
 
 ### 🤖 Claude Code Integration
 - **Global Configuration** - Custom instructions for Claude Code in `~/.claude/CLAUDE.md`
-- **Settings** - Permissions and plugin configuration
+- **Settings** - Shared permissions, attribution and plugins. `install.sh` merges only these keys into `~/.claude/settings.json` (backup in `settings.json.bak`) and keeps local keys such as hooks and preferences; `sync.sh` copies only these keys back
 - **Custom Agents** - Specialized AI assistants for common tasks:
-  - `git-commit-messages` - Generates well-formatted commit messages
-  - `swift-testing` - Expert in Swift Testing framework and TDD
-  - `swift-docs` - Swift documentation specialist
-  - `kotlin-testing` - Kotlin/Android testing expert
-- **Custom Skills** - Skill directories (each with a `SKILL.md`) installed to `~/.claude/skills/`
+  - `code-review` - Read-only senior code reviewer that reports findings and hand-offs
+  - `design-patterns` - GoF design patterns expert
+  - `git-commit-messages` - Writes atomic commit messages
+  - `pr-description` - Writes PR titles and bodies (Why / Use cases / What changed)
+  - `release-notes` - Writes user-facing release notes from commits
+  - `swift-tdd-architect` - Builds Swift / Apple-platform features test-first, commits and reviews
+  - `swift-testing` - Swift Testing framework and TDD expert
+  - `swift-test-doubles-architect` - Test double design for Swift
+  - `swift-docs` - Documents Swift API contracts
+  - `kotlin-tdd-architect` - Builds Kotlin / Android features test-first, commits and reviews
+  - `kotlin-testing` - Kotlin / Android testing expert
+  - `kotlin-test-doubles-architect` - Test double design for Kotlin
+- **Custom Skills** - Skill directories (each with a `SKILL.md`) installed to `~/.claude/skills/`; none are tracked yet
 
 ### 🔤 Fonts
 - **JetBrains Mono Nerd Font** - Programming font with ligatures and icons

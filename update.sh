@@ -111,6 +111,13 @@ update_repo() {
     print_header "Repository Update"
     cd "$SCRIPT_DIR"
 
+    local current_branch
+    current_branch="$(git rev-parse --abbrev-ref HEAD)"
+    if [[ "$current_branch" != "main" ]]; then
+        print_skip "Repository is on '$current_branch', not main: skipping pull"
+        return 0
+    fi
+
     local current_commit=$(git rev-parse HEAD)
 
     if $CHECK_ONLY; then
@@ -125,7 +132,7 @@ update_repo() {
     fi
 
     print_status "Pulling latest changes..."
-    if git pull --rebase origin main 2>/dev/null; then
+    if git pull --ff-only origin main; then
         local new_commit=$(git rev-parse HEAD)
         if [[ "$current_commit" != "$new_commit" ]]; then
             print_success "Repository updated"

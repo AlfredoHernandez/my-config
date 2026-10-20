@@ -146,7 +146,7 @@ Installs or updates all components from the repo to your system. If a file alrea
 
 ### `update.sh` - Update
 
-Updates installed components to their latest versions. Pulls `origin/main` with rebase into the current branch, upgrades eza and SwiftFormat, and copies changed files from the repo to your system: SwiftFormat config, `CLAUDE.md`, Claude agents and skills, Xcode themes and `deeplink.sh`. Claude settings, aliases, Xcode templates and the header template are not updated; run `install.sh` for those.
+Updates installed components to their latest versions. Fast-forwards `main` from `origin/main` (skipped on any other branch), upgrades eza and SwiftFormat, and copies changed files from the repo to your system: SwiftFormat config, `CLAUDE.md`, Claude agents and skills, Xcode themes and `deeplink.sh`. Claude settings, aliases, Xcode templates and the header template are not updated; run `install.sh` for those.
 
 ```bash
 ./update.sh            # Update everything

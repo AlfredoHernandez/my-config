@@ -93,8 +93,16 @@ my-config/
 Before submitting:
 
 1. Run `./install.sh --dry-run` to preview changes
-2. Test on a clean environment: every script writes under `$HOME`, including the Xcode folders, so `HOME="$(mktemp -d)" ./install.sh --skip-homebrew --skip-tools --skip-font` runs for real without touching your machine
-3. Run `./health-check.sh` to verify installation
+2. Test on a clean environment. The configuration steps write only under `$HOME`, including the Xcode folders, so they run for real in a temporary `HOME` without touching your machine:
+
+   ```bash
+   SANDBOX="$(mktemp -d)"
+   HOME="$SANDBOX" ./install.sh --skip-homebrew --skip-tools --skip-font
+   HOME="$SANDBOX" ./health-check.sh
+   ```
+
+   Homebrew and tools steps are system-wide, `sync.sh` writes into the repo and `update.sh --repo` pulls it, so keep those out of the sandbox run
+3. Run `./health-check.sh` on your machine to verify the real installation
 4. Ensure scripts work on both Intel and Apple Silicon Macs
 
 ## Questions?

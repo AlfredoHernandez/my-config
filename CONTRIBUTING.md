@@ -78,6 +78,8 @@ my-config/
 │   ├── aliases.zsh      # Shell aliases
 │   └── swiftformat.txt  # SwiftFormat configuration
 ├── scripts/             # Custom utility scripts
+├── tests/               # bats tests (run with `bats tests`)
+├── .github/workflows/   # CI: shellcheck and the bats tests on every pull request
 ├── claude/              # Claude Code configuration
 │   ├── CLAUDE.md        # Global instructions
 │   ├── settings.json    # Claude Code settings
@@ -92,8 +94,17 @@ my-config/
 
 Before submitting:
 
-1. Run `./install.sh --dry-run` to preview changes
-2. Test on a clean environment. The configuration steps write only under `$HOME`, including the Xcode folders, so they run for real in a temporary `HOME` without touching your machine:
+1. Run the automated checks. CI runs the same ones on every pull request:
+
+   ```bash
+   brew install bats-core shellcheck
+   bats tests
+   shellcheck -S warning *.sh lib/*.sh scripts/*.sh tests/test_helper.bash
+   ```
+
+   Each test runs the scripts for real in its own temporary `HOME`. Add a test for every bug fix and new behavior, in the matching file under `tests/`
+2. Run `./install.sh --dry-run` to preview changes
+3. Test on a clean environment. The configuration steps write only under `$HOME`, including the Xcode folders, so they run for real in a temporary `HOME` without touching your machine:
 
    ```bash
    SANDBOX="$(mktemp -d)"
@@ -102,8 +113,8 @@ Before submitting:
    ```
 
    Homebrew and tools steps are system-wide, `sync.sh` writes into the repo and `update.sh --repo` pulls it, so keep those out of the sandbox run
-3. Run `./health-check.sh` on your machine to verify the real installation
-4. Ensure scripts work on both Intel and Apple Silicon Macs
+4. Run `./health-check.sh` on your machine to verify the real installation
+5. Ensure scripts work on both Intel and Apple Silicon Macs
 
 ## Questions?
 

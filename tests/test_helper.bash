@@ -12,9 +12,11 @@ sandbox_home() {
     # Git hooks export these, and they would point the tests' git commands at the real repo
     unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR
     unset MY_CONFIG_UPDATE_RESTARTED_FROM
+    # Git reads and writes its global config in the sandboxed HOME, not in a path set outside
+    unset GIT_CONFIG_GLOBAL
     export XDG_CONFIG_HOME="$HOME/.config" GIT_CONFIG_NOSYSTEM=1
 
-    # Homebrew and the font download are system-wide or networked: stubs log the call and fail
+    # Homebrew is system-wide and curl goes to the network: stubs log the call and fail
     STUB_LOG="$BATS_TEST_TMPDIR/stub-calls.log"
     mkdir -p "$BATS_TEST_TMPDIR/bin"
     local tool

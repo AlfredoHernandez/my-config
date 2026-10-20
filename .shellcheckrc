@@ -1,0 +1,3 @@
+# `local x=$(cmd)` is used on purpose for best-effort checks: splitting it would let a failing
+# command stop install.sh (set -e) or fire update.sh's ERR trap
+disable=SC2155

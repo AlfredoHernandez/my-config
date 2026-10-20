@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run shellcheck
+        run: shellcheck -S warning *.sh lib/*.sh scripts/*.sh tests/test_helper.bash
+
+  tests:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The tests for agents deleted from the repo read them from the git history
+          fetch-depth: 0
+      - name: Install bats
+        run: brew install bats-core
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: "1"
+      - name: Run tests
+        run: bats tests

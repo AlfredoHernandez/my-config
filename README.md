@@ -233,9 +233,11 @@ Removes installed components from your system.
 ### Claude Code
 | Alias | Command | Description |
 |-------|---------|-------------|
-| `cl` | `claude --model opus --effort high --advisor opus --fallback-model sonnet` | Default session, Sonnet subagents |
-| `clx` | `claude --model opus --effort xhigh --advisor opus` | Hard work: architecture, big refactors, hard bugs. Opus subagents |
-| `clq` | `claude --model sonnet --effort medium` | Quick questions and exploration. Haiku subagents |
+| `cl` | `CLAUDE_CODE_SUBAGENT_MODEL=sonnet claude --model opus --effort high --advisor opus --fallback-model sonnet` | Default session. Subagents without `model:` use Sonnet |
+| `clx` | `CLAUDE_CODE_SUBAGENT_MODEL=opus claude --model opus --effort xhigh --advisor opus` | Hard work: architecture, big refactors, hard bugs. Subagents without `model:` use Opus |
+| `clq` | `CLAUDE_CODE_SUBAGENT_MODEL=haiku claude --model sonnet --effort medium` | Quick questions and exploration. Subagents without `model:` use Haiku |
+
+The custom agents in `claude/agents/` set their own `model:` in the frontmatter, and since Claude Code v2.1.251 that wins over `CLAUDE_CODE_SUBAGENT_MODEL`. So the alias only changes the model of subagents that don't set one, like the built-in `general-purpose`.
 
 ### Enhanced File Listing (eza)
 | Alias | Command | Description |

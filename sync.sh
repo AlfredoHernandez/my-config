@@ -20,6 +20,7 @@ NC='\033[0m'
 UPDATED=0
 UP_TO_DATE=0
 MISSING=0
+SKIPPED=0
 CHANGES=()
 
 print_updated() {
@@ -38,12 +39,17 @@ print_missing() {
     ((MISSING++))
 }
 
+print_skipped() {
+    echo -e "${RED}[!]${NC} $1"
+    ((SKIPPED++))
+}
+
 print_status() {
     echo -e "${CYAN}[*]${NC} $1"
 }
 
 # Compare and sync a single file
-# Returns 0 if updated, 1 if up-to-date, 2 if source missing
+# Returns 0 if updated, 1 if up-to-date, 2 if source missing, 3 if the repo copy is newer
 sync_file() {
     local source="$1"
     local dest="$2"
@@ -62,6 +68,10 @@ sync_file() {
     fi
 
     if ! diff -q "$source" "$dest" &>/dev/null; then
+        if [[ "$dest" -nt "$source" ]]; then
+            print_skipped "$label (repo copy is newer: run ./install.sh first)"
+            return 3
+        fi
         cp "$source" "$dest"
         print_updated "$label"
         return 0
@@ -276,8 +286,15 @@ print_summary() {
     echo -e "  ${GREEN}↑ Updated:${NC}    $UPDATED"
     echo -e "  ${CYAN}✓ Up to date:${NC} $UP_TO_DATE"
     echo -e "  ${YELLOW}− Missing:${NC}    $MISSING"
+    echo -e "  ${RED}! Skipped:${NC}    $SKIPPED"
     echo -e "${WHITE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo ""
+
+    if [[ $SKIPPED -gt 0 ]]; then
+        echo -e "${RED}Some repo files are newer than the installed copies and were not overwritten.${NC}"
+        echo -e "Run ${WHITE}./install.sh${NC} to install them, then sync again."
+        echo ""
+    fi
 
     if [[ $UPDATED -gt 0 ]]; then
         echo -e "${GREEN}Configuration updated!${NC} Review the changes, then stage and commit them by path:"

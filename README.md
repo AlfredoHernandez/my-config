@@ -167,6 +167,8 @@ Compares installed files on your system against the repo and copies any changes 
 
 **Direction:** System → Repo (opposite of `install.sh` and `update.sh`)
 
+If a repo file is newer than its installed copy (for example after a `git pull` without `./install.sh`), `sync.sh` skips it instead of overwriting it, and reports it as skipped. Run `./install.sh`, then sync again.
+
 Claude skills are synced from `~/.claude/skills/<name>/` only for the skills already in `claude/skills/`; to track a new skill, copy it there once. Skills managed by the Claude app (`~/.claude/skills/synced/`) and `__pycache__` folders are ignored.
 
 ### `health-check.sh` - Health Check

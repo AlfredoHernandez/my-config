@@ -700,9 +700,18 @@ install_claude_settings() {
         return
     fi
 
+    if ! jq empty "$dest" "$src" 2>/dev/null; then
+        print_warning "Invalid JSON in Claude settings: skipping merge (fix $dest)"
+        return
+    fi
+
     local merged
     merged="$(mktemp)"
-    claude_settings_merge_owned "$dest" "$src" > "$merged"
+    if ! claude_settings_merge_owned "$dest" "$src" > "$merged"; then
+        print_warning "Claude settings merge failed: skipping"
+        rm -f "$merged"
+        return
+    fi
 
     if claude_settings_equal "$merged" "$dest"; then
         print_success "Claude settings already up to date"

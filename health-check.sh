@@ -138,7 +138,7 @@ check_jq() {
     if command_exists jq; then
         print_pass "jq installed"
     else
-        print_warning "jq not installed: install.sh and sync.sh skip the Claude settings merge"
+        print_warning "jq not installed: install.sh, update.sh and sync.sh skip the Claude settings merge"
         print_info "Run 'brew install jq'"
     fi
 }

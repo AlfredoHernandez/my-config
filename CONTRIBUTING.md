@@ -70,7 +70,7 @@ my-config/
 ├── health-check.sh      # Verify installation status
 ├── lib/
 │   ├── config-install.sh   # Configuration copy steps shared by install.sh and update.sh
-│   ├── claude-settings.sh  # Claude settings merge shared by install.sh and sync.sh
+│   ├── claude-settings.sh  # Claude settings merge shared by install.sh, update.sh and sync.sh
 │   └── retired-entries.sh  # Agents and skills deleted from the repo, read from git history
 ├── config/              # Configuration files
 │   ├── aliases.zsh      # Shell aliases

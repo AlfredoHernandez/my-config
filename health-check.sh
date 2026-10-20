@@ -1,6 +1,6 @@
 #!/bin/bash
 
-REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$REPO_DIR/lib/common.sh"
 source "$REPO_DIR/lib/retired-entries.sh"
 

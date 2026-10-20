@@ -28,6 +28,7 @@ UPDATE_REPO=false
 UPDATE_TOOLS=false
 UPDATE_CONFIG=false
 UPDATE_FONT=false
+REPO_CHANGED=false
 
 # Counters
 UPDATED=0
@@ -67,6 +68,8 @@ show_help() {
     echo "  ./update.sh --check      # Preview what would be updated"
     echo "  ./update.sh --tools      # Only update Homebrew packages"
 }
+
+ORIGINAL_ARGS=("$@")
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -148,12 +151,23 @@ update_repo() {
         local new_commit=$(git rev-parse HEAD)
         if [[ "$current_commit" != "$new_commit" ]]; then
             print_success "Repository updated"
+            REPO_CHANGED=true
         else
             print_skip "Repository already up to date"
         fi
     else
         print_fail "Failed to update repository"
     fi
+}
+
+# The steps after the pull must run the code the pull brought, not the copy of this script and
+# its libs already loaded in memory, so restart once with the same arguments
+restart_if_repo_changed() {
+    $REPO_CHANGED || return 0
+    $UPDATE_ALL || $UPDATE_TOOLS || $UPDATE_CONFIG || $UPDATE_FONT || return 0
+    print_info "Restarting with the updated update.sh"
+    export MY_CONFIG_UPDATE_RESTARTED=1
+    exec "$SCRIPT_DIR/update.sh" ${ORIGINAL_ARGS[@]+"${ORIGINAL_ARGS[@]}"}
 }
 
 # Update Homebrew packages
@@ -286,7 +300,13 @@ if $CHECK_ONLY; then
 fi
 
 if $UPDATE_ALL || $UPDATE_REPO; then
-    update_repo
+    if [[ -n "${MY_CONFIG_UPDATE_RESTARTED:-}" ]]; then
+        print_header "Repository Update"
+        print_success "Repository updated to $(git -C "$SCRIPT_DIR" rev-parse --short HEAD), running its update.sh"
+    else
+        update_repo
+        restart_if_repo_changed
+    fi
 fi
 
 if $UPDATE_ALL || $UPDATE_TOOLS; then

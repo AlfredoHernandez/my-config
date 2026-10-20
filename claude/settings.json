@@ -24,6 +24,25 @@
       "Bash(git stash clear:*)"
     ]
   },
+  "autoMode": {
+    "environment": [
+      "$defaults",
+      "Organization: personal account of Alfredo Hernández (GitHub: AlfredoHernandez). Primary use: iOS/macOS (Swift) and Android (Kotlin) app development, plus personal dotfiles and developer tooling",
+      "Source control: github.com/AlfredoHernandez and every repository under it, including their configured remotes",
+      "Trusted repo: any git repository under ~/Developer whose remote is under github.com/AlfredoHernandez. Routine local build, test, lint, formatting and git operations there are expected",
+      "Org-specific CLIs: xcodebuild, xcrun, simctl, swift, swiftformat, ./gradlew, adb, gh, jq and codegraph are routine local developer tools",
+      "Sensitive data locations & audiences: app signing material (*.keystore, *.jks, *.p12, *.p8, *.mobileprovision), google-services.json, GoogleService-Info.plist, .env files and store API keys stay on this machine; never commit them or send them outside it",
+      "Sensitive remote targets: App Store Connect and Google Play Console are production; submitting or publishing a build needs the user's explicit approval"
+    ],
+    "allow": [
+      "$defaults",
+      "Deleting files or directories inside the session scratchpad, /tmp, /private/tmp, or build outputs (DerivedData, build/, .build/, .gradle/, out/) is routine cleanup",
+      "Running local build, test and format tools (xcodebuild, swift build/test, swiftformat, ./gradlew, xcrun simctl on simulators that are already installed, adb on connected devices or emulators) inside the working repository is routine. Creating or deleting simulators is not covered"
+    ]
+  },
+  "autoContinueAtUsageLimit": true,
+  "inputNeededNotifEnabled": true,
+  "askUserQuestionTimeout": "10m",
   "enabledPlugins": {
     "swift-lsp@claude-plugins-official": true,
     "swift-concurrency@swift-concurrency-agent-skill": true,

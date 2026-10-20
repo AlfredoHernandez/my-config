@@ -1,11 +1,17 @@
 #!/bin/bash
 # Shared by install.sh and sync.sh. The repo owns only these keys of
-# ~/.claude/settings.json; everything else (hooks, autoMode, preferences) stays machine-local.
+# ~/.claude/settings.json; everything else (hooks, autoMode.soft_deny, preferences) stays machine-local.
+# autoMode is shared through user settings because the classifier ignores it in project settings.
 CLAUDE_SETTINGS_OWNED_PATHS='[
   ["env", "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS"],
   ["attribution"],
   ["permissions", "allow"],
-  ["permissions", "ask"]
+  ["permissions", "ask"],
+  ["autoMode", "environment"],
+  ["autoMode", "allow"],
+  ["autoContinueAtUsageLimit"],
+  ["inputNeededNotifEnabled"],
+  ["askUserQuestionTimeout"]
 ]'
 
 # For these objects the repo owns only the entries it lists, so plugins enabled on a single

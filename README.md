@@ -142,7 +142,7 @@ Installs or updates all components from the repo to your system. If a file alrea
 | `--only-themes` / `--skip-themes` | Xcode color themes |
 | `--only-templates` / `--skip-templates` | Xcode templates |
 | `--only-header` / `--skip-header` | Xcode header template |
-| `--only-claude` / `--skip-claude` | Claude Code configuration |
+| `--only-claude` / `--skip-claude` | Claude Code configuration, agents and skills |
 
 ### `update.sh` - Update
 
@@ -159,7 +159,7 @@ Updates installed components to their latest versions. Fast-forwards `main` from
 
 ### `sync.sh` - Sync
 
-Compares installed files on your system against the repo and copies any changes back. Useful for capturing configuration changes made outside the repo (e.g., editing Xcode themes directly). If updates are found, suggests a commit and push.
+Compares installed files on your system against the repo and copies any changes back. Useful for capturing configuration changes made outside the repo (e.g., editing Xcode themes directly). If updates are found, it asks you to review them with `git status` and `git diff` and commit them by path.
 
 ```bash
 ./sync.sh

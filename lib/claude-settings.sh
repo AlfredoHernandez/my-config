@@ -55,10 +55,16 @@ claude_settings_merge_owned() {
 # Prints the lines of the installed shared values that a merge replaces with the repo's values
 claude_settings_replaced_values() {
     local installed="$1" repo="$2"
-    # Trailing commas are dropped so a value that only moved within a list isn't reported
-    { diff <(claude_settings_owned_subset "$installed" "$repo" | jq -S . | sed 's/,$//') \
-           <(claude_settings_owned_subset "$repo" "$repo" | jq -S . | sed 's/,$//') || true; } |
-        sed -n 's/^< *//p'
+    comm -23 <(claude_settings_leaves "$installed" "$repo") <(claude_settings_leaves "$repo" "$repo")
+}
+
+# One "key.path[]: value" line per shared value. List indexes are dropped, so a value that only
+# moved within a list matches, while the key path keeps a value moved to another key apart
+claude_settings_leaves() {
+    claude_settings_owned_subset "$1" "$2" |
+        jq -r 'paths(scalars) as $p
+            | "\($p | map(if type == "number" then "[]" else "." + . end) | join("") | ltrimstr(".")): \(getpath($p) | tojson)"' |
+        sort -u
 }
 
 claude_settings_equal() {

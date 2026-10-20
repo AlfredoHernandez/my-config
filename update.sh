@@ -108,7 +108,10 @@ unset MY_CONFIG_UPDATE_RESTARTED_FROM
 # Update repository
 update_repo() {
     print_header "Repository Update"
-    cd "$SCRIPT_DIR"
+    if ! cd "$SCRIPT_DIR"; then
+        print_fail "Cannot enter $SCRIPT_DIR"
+        return 1
+    fi
 
     local current_branch
     current_branch="$(git rev-parse --abbrev-ref HEAD)"
@@ -117,11 +120,14 @@ update_repo() {
         return 0
     fi
 
-    local current_commit=$(git rev-parse HEAD)
+    local current_commit
+
+    current_commit=$(git rev-parse HEAD)
 
     if $CHECK_ONLY; then
         git fetch origin main --quiet 2>/dev/null || true
-        local behind=$(git rev-list HEAD..origin/main --count 2>/dev/null || echo "0")
+        local behind
+        behind=$(git rev-list HEAD..origin/main --count 2>/dev/null || echo "0")
         if [[ "$behind" -gt 0 ]]; then
             print_check "Repository is $behind commit(s) behind origin/main"
         else
@@ -132,7 +138,8 @@ update_repo() {
 
     print_status "Pulling latest changes..."
     if git pull --ff-only origin main; then
-        local new_commit=$(git rev-parse HEAD)
+        local new_commit
+        new_commit=$(git rev-parse HEAD)
         if [[ "$current_commit" != "$new_commit" ]]; then
             print_success "Repository updated"
             REPO_CHANGED=true
@@ -182,10 +189,12 @@ update_tools() {
 
     if $CHECK_ONLY; then
         print_status "Checking for outdated packages..."
-        local outdated=$(brew outdated 2>/dev/null)
+        local outdated
+        outdated=$(brew outdated 2>/dev/null) || true
         for pkg in "${packages[@]}"; do
             if echo "$outdated" | grep -q "^$pkg"; then
-                local current=$(brew list --versions "$pkg" 2>/dev/null | awk '{print $2}')
+                local current
+                current=$(brew list --versions "$pkg" 2>/dev/null | awk '{print $2}') || true
                 print_check "$pkg is outdated (current: $current)"
             elif command_exists "$pkg"; then
                 print_info "$pkg is up to date"
@@ -233,7 +242,6 @@ update_font() {
     print_header "Nerd Font"
 
     local font_dir="$HOME/Library/Fonts"
-    local font_url="https://github.com/ryanoasis/nerd-fonts/releases/download/${NERD_FONT_VERSION}/JetBrainsMono.zip"
 
     # Check if font is installed
     if ! ls "$font_dir"/JetBrainsMonoNerdFont*.ttf &>/dev/null && \
@@ -302,7 +310,7 @@ fi
 
 if $UPDATE_ALL || $UPDATE_REPO; then
     if is_restarted_run; then
-        cd "$SCRIPT_DIR"
+        cd "$SCRIPT_DIR" || exit 1
         print_success "Repository updated from $(git rev-parse --short "$RESTARTED_FROM") to $(git rev-parse --short HEAD), running its update.sh"
     else
         update_repo

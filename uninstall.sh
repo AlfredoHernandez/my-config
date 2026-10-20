@@ -168,7 +168,8 @@ remove_font() {
     fi
 
     if $DRY_RUN; then
-        local count=$(ls "$font_dir"/JetBrainsMonoNerdFont*.ttf "$font_dir"/JetBrainsMonoNFM*.ttf 2>/dev/null | wc -l | xargs)
+        local count
+        count=$(ls "$font_dir"/JetBrainsMonoNerdFont*.ttf "$font_dir"/JetBrainsMonoNFM*.ttf 2>/dev/null | wc -l | xargs)
         print_dry_run "JetBrains Mono Nerd Font ($count files)"
     else
         print_status "Removing font files..."

@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: macos-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # The tests for agents deleted from the repo read them from the git history
+          fetch-depth: 0
+      # Homebrew's shellcheck matches the version used locally; Ubuntu's apt one is older
+      - name: Install shellcheck and bats
+        run: brew install shellcheck bats-core
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: "1"
+      - name: Run shellcheck
+        run: shellcheck -S warning *.sh lib/*.sh scripts/*.sh tests/test_helper.bash tests/*.bats
+      - name: Run tests
+        run: bats tests

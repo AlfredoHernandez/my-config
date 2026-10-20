@@ -17,6 +17,7 @@ NERD_FONT_VERSION="v3.4.0"
 # Installation flags (default: install everything)
 DRY_RUN=false
 VALIDATE_ONLY=false
+VERIFY=true
 INSTALL_ALL=true
 INSTALL_HOMEBREW=false
 INSTALL_TOOLS=false
@@ -24,7 +25,6 @@ INSTALL_FONT=false
 INSTALL_SWIFTFORMAT_CONFIG=false
 INSTALL_ALIASES=false
 INSTALL_SCRIPTS=false
-INSTALL_XCODE=false
 INSTALL_THEMES=false
 INSTALL_TEMPLATES=false
 INSTALL_HEADER=false
@@ -37,7 +37,6 @@ SKIP_FONT=false
 SKIP_SWIFTFORMAT_CONFIG=false
 SKIP_ALIASES=false
 SKIP_SCRIPTS=false
-SKIP_XCODE=false
 SKIP_THEMES=false
 SKIP_TEMPLATES=false
 SKIP_HEADER=false
@@ -52,6 +51,7 @@ show_help() {
     echo "General Options:"
     echo "  --dry-run, -n              Preview what would be installed without making changes"
     echo "  --validate, -v             Check system prerequisites before installing"
+    echo "  --no-verify                Skip the health check that runs after installing"
     echo "  --help, -h                 Show this help message"
     echo "  --list                     List all available components"
     echo ""
@@ -134,6 +134,10 @@ while [[ $# -gt 0 ]]; do
             VALIDATE_ONLY=true
             shift
             ;;
+        --no-verify)
+            VERIFY=false
+            shift
+            ;;
         # Only flags
         --only-homebrew)
             INSTALL_ALL=false
@@ -167,7 +171,6 @@ while [[ $# -gt 0 ]]; do
             ;;
         --only-xcode)
             INSTALL_ALL=false
-            INSTALL_XCODE=true
             INSTALL_THEMES=true
             INSTALL_TEMPLATES=true
             INSTALL_HEADER=true
@@ -219,7 +222,6 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --skip-xcode)
-            SKIP_XCODE=true
             SKIP_THEMES=true
             SKIP_TEMPLATES=true
             SKIP_HEADER=true
@@ -250,8 +252,8 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Helper function to check if component should be installed
+# The first argument names the component only for readability at the call site
 should_install() {
-    local component=$1
     local install_flag=$2
     local skip_flag=$3
     
@@ -314,7 +316,8 @@ validate_prerequisites() {
     # Check macOS
     print_header "Operating System"
     if [[ "$(uname)" == "Darwin" ]]; then
-        local macos_version=$(sw_vers -productVersion)
+        local macos_version
+        macos_version=$(sw_vers -productVersion) || true
         print_pass "macOS detected (version $macos_version)"
         passed=$((passed + 1))
     else
@@ -323,7 +326,8 @@ validate_prerequisites() {
     fi
 
     # Check architecture
-    local arch=$(uname -m)
+    local arch
+    arch=$(uname -m) || true
     if [[ "$arch" == "arm64" ]]; then
         print_pass "Apple Silicon detected"
     else
@@ -344,7 +348,8 @@ validate_prerequisites() {
 
     # Check Git
     if command -v git &>/dev/null; then
-        local git_version=$(git --version | awk '{print $3}')
+        local git_version
+        git_version=$(git --version | awk '{print $3}') || true
         print_pass "Git installed (version $git_version)"
         passed=$((passed + 1))
     else
@@ -382,7 +387,8 @@ validate_prerequisites() {
 
     # Check disk space
     print_header "Disk Space"
-    local available_space=$(df -g "$HOME" | awk 'NR==2 {print $4}')
+    local available_space
+    available_space=$(df -g "$HOME" | awk 'NR==2 {print $4}') || true
     if [[ "$available_space" -ge 1 ]]; then
         print_pass "Sufficient disk space (${available_space}GB available)"
         passed=$((passed + 1))
@@ -411,7 +417,8 @@ validate_prerequisites() {
 
     # Check shell
     print_header "Shell"
-    local current_shell=$(basename "$SHELL")
+    local current_shell
+    current_shell=$(basename "$SHELL") || true
     if [[ "$current_shell" == "zsh" ]]; then
         print_pass "Using zsh (recommended)"
         passed=$((passed + 1))
@@ -547,7 +554,9 @@ install_jetbrains_mono_nerd_font() {
         return 0
     fi
 
-    local temp_dir=$(mktemp -d)
+    local temp_dir
+
+    temp_dir=$(mktemp -d)
 
     print_status "Downloading JetBrains Mono Nerd Font..."
     curl -fsSL "$font_url" -o "$temp_dir/JetBrainsMono.zip"
@@ -747,14 +756,14 @@ else
     print_next_steps
 
     echo -e "\n${GREEN}Happy coding! 🚀${NC}"
+fi
 
-    # Run post-installation verification
+if ! $DRY_RUN && $VERIFY; then
     echo -e "\n${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo -e "${WHITE}Running post-installation verification...${NC}\n"
 
-    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    if [[ -f "$SCRIPT_DIR/health-check.sh" ]]; then
-        bash "$SCRIPT_DIR/health-check.sh"
+    if [[ -f "$REPO_DIR/health-check.sh" ]]; then
+        bash "$REPO_DIR/health-check.sh"
     else
         echo -e "${YELLOW}health-check.sh not found, skipping verification${NC}"
     fi

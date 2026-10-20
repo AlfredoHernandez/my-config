@@ -132,6 +132,16 @@ check_swiftformat() {
     fi
 }
 
+check_jq() {
+    print_header "jq"
+    if command_exists jq; then
+        print_pass "jq installed"
+    else
+        print_warning "jq not installed: install.sh and sync.sh skip the Claude settings merge"
+        print_info "Run 'brew install jq'"
+    fi
+}
+
 # Check JetBrains Mono Nerd Font
 check_font() {
     print_header "JetBrains Mono Nerd Font"
@@ -443,6 +453,7 @@ print_info "Starting health check...\n"
 check_homebrew
 check_eza
 check_swiftformat
+check_jq
 check_font
 check_aliases
 check_scripts

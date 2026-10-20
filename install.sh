@@ -436,6 +436,14 @@ validate_prerequisites() {
         ((failed++))
     fi
 
+    if command -v jq &>/dev/null; then
+        print_pass "jq installed"
+        ((passed++))
+    else
+        print_warning "jq not installed: the Claude settings merge will be skipped"
+        print_info "  Install with: brew install jq"
+    fi
+
     # Check network connectivity
     print_header "Network"
     if curl -s --head --connect-timeout 5 https://github.com &>/dev/null; then

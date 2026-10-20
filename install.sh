@@ -1,7 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
-source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/claude-settings.sh"
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$REPO_DIR/lib/claude-settings.sh"
+cd "$REPO_DIR"
 
 # Error handler - shows where the error occurred
 trap 'echo "Error: Command failed at line $LINENO. Exit code: $?" >&2' ERR

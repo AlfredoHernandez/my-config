@@ -845,43 +845,55 @@ if should_install "header" "$INSTALL_HEADER" "$SKIP_HEADER"; then
     install_or_update_file "Headers/IDETemplateMacros.plist" "$XC_USER_DATA/IDETemplateMacros.plist" "Header template"
 fi
 
+print_selected_components() {
+    local marker="$1"
+    should_install "homebrew" "$INSTALL_HOMEBREW" "$SKIP_HOMEBREW" && echo -e "  $marker Homebrew package manager"
+    should_install "tools" "$INSTALL_TOOLS" "$SKIP_TOOLS" && echo -e "  $marker eza and SwiftFormat"
+    should_install "font" "$INSTALL_FONT" "$SKIP_FONT" && echo -e "  $marker JetBrains Mono Nerd Font"
+    should_install "swiftformat-config" "$INSTALL_SWIFTFORMAT_CONFIG" "$SKIP_SWIFTFORMAT_CONFIG" && echo -e "  $marker SwiftFormat configuration"
+    should_install "claude" "$INSTALL_CLAUDE" "$SKIP_CLAUDE" && echo -e "  $marker Claude Code configuration, agents and skills"
+    should_install "aliases" "$INSTALL_ALIASES" "$SKIP_ALIASES" && echo -e "  $marker Shell aliases"
+    should_install "scripts" "$INSTALL_SCRIPTS" "$SKIP_SCRIPTS" && echo -e "  $marker Custom development scripts"
+    should_install "themes" "$INSTALL_THEMES" "$SKIP_THEMES" && echo -e "  $marker Xcode themes"
+    should_install "templates" "$INSTALL_TEMPLATES" "$SKIP_TEMPLATES" && echo -e "  $marker Xcode templates"
+    should_install "header" "$INSTALL_HEADER" "$SKIP_HEADER" && echo -e "  $marker Xcode header template"
+    return 0
+}
+
+print_next_steps() {
+    local steps=()
+    if should_install "aliases" "$INSTALL_ALIASES" "$SKIP_ALIASES"; then
+        steps+=("Restart your terminal or run: ${WHITE}source ~/.zshrc${NC}")
+        steps+=("Try the new aliases: ${WHITE}gl${NC}, ${WHITE}gp${NC}, ${WHITE}gst${NC}, ${WHITE}ll${NC}")
+    fi
+    should_install "tools" "$INSTALL_TOOLS" "$SKIP_TOOLS" && steps+=("Format Swift code: ${WHITE}swiftformat .${NC}")
+    should_install "scripts" "$INSTALL_SCRIPTS" "$SKIP_SCRIPTS" && steps+=("Test deeplinks: ${WHITE}dl your-app://test${NC}")
+
+    if [[ ${#steps[@]} -gt 0 ]]; then
+        echo -e "\n${YELLOW}📝 Next steps:${NC}"
+        for step in "${steps[@]}"; do
+            echo -e "  • $step"
+        done
+    fi
+    should_install "swiftformat-config" "$INSTALL_SWIFTFORMAT_CONFIG" "$SKIP_SWIFTFORMAT_CONFIG" && \
+        echo -e "\n${PURPLE}💡 Pro tip:${NC} Your SwiftFormat config is at ${WHITE}~/.swiftformat${NC}"
+    return 0
+}
+
 # Final message
 if $DRY_RUN; then
     print_header "Dry Run Complete!"
     echo -e "\n${YELLOW}🔍 This was a dry run - no changes were made${NC}"
     echo -e "\n${CYAN}📋 What would be installed:${NC}"
-    echo -e "  ${YELLOW}○${NC} Homebrew package manager"
-    echo -e "  ${YELLOW}○${NC} eza (modern ls replacement)"
-    echo -e "  ${YELLOW}○${NC} SwiftFormat with custom configuration"
-    echo -e "  ${YELLOW}○${NC} JetBrains Mono Nerd Font"
-    echo -e "  ${YELLOW}○${NC} Claude Code configuration, agents and skills"
-    echo -e "  ${YELLOW}○${NC} Shell aliases for Git and development"
-    echo -e "  ${YELLOW}○${NC} Xcode themes and templates"
-    echo -e "  ${YELLOW}○${NC} Custom development scripts"
+    print_selected_components "${YELLOW}○${NC}"
     echo -e "\n${GREEN}Run without --dry-run to install:${NC} ${WHITE}./install.sh${NC}"
 else
     print_header "Installation Complete!"
-    print_success "All components installed successfully!"
+    print_success "Selected components installed successfully!"
 
-    echo -e "\n${GREEN}🎉 Your development environment is ready! 🎉${NC}"
     echo -e "\n${CYAN}📋 What was installed:${NC}"
-    echo -e "  ${GREEN}✓${NC} Homebrew package manager"
-    echo -e "  ${GREEN}✓${NC} eza (modern ls replacement)"
-    echo -e "  ${GREEN}✓${NC} SwiftFormat with custom configuration"
-    echo -e "  ${GREEN}✓${NC} JetBrains Mono Nerd Font"
-    echo -e "  ${GREEN}✓${NC} Claude Code configuration, agents and skills"
-    echo -e "  ${GREEN}✓${NC} Shell aliases for Git and development"
-    echo -e "  ${GREEN}✓${NC} Xcode themes and templates"
-    echo -e "  ${GREEN}✓${NC} Custom development scripts"
-
-    echo -e "\n${YELLOW}📝 Next steps:${NC}"
-    echo -e "  1. Restart your terminal or run: ${WHITE}source ~/.zshrc${NC}"
-    echo -e "  2. Try the new aliases: ${WHITE}gl${NC}, ${WHITE}gp${NC}, ${WHITE}gst${NC}, ${WHITE}ll${NC}"
-    echo -e "  3. Format Swift code: ${WHITE}swiftformat .${NC}"
-    echo -e "  4. Test deeplinks: ${WHITE}dl your-app://test${NC}"
-
-    echo -e "\n${PURPLE}💡 Pro tip:${NC} Your SwiftFormat config is at ${WHITE}~/.swiftformat${NC}"
-    echo -e "   You can customize it or use it in your projects!"
+    print_selected_components "${GREEN}✓${NC}"
+    print_next_steps
 
     echo -e "\n${GREEN}Happy coding! 🚀${NC}"
 

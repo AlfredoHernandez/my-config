@@ -110,6 +110,7 @@ Installs or updates all components from the repo to your system. If a file alrea
 ./install.sh --dry-run    # Preview without making changes
 ./install.sh --validate   # Check system prerequisites
 ./install.sh --list       # List available components
+./install.sh --no-verify  # Skip the health check that runs after installing
 ```
 
 #### Install Specific Components

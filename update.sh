@@ -22,6 +22,7 @@ NC='\033[0m'
 
 # Flags
 CHECK_ONLY=false
+DRY_RUN=false
 UPDATE_ALL=true
 UPDATE_REPO=false
 UPDATE_TOOLS=false
@@ -34,12 +35,19 @@ SKIPPED=0
 FAILED=0
 
 print_status() { echo -e "${BLUE}[*]${NC} $1"; }
-print_success() { echo -e "${GREEN}[✓]${NC} $1"; ((UPDATED++)); }
-print_skip() { echo -e "${YELLOW}[−]${NC} $1"; ((SKIPPED++)); }
-print_fail() { echo -e "${RED}[✗]${NC} $1"; ((FAILED++)); }
+print_success() { echo -e "${GREEN}[✓]${NC} $1"; UPDATED=$((UPDATED + 1)); }
+print_skip() { echo -e "${YELLOW}[−]${NC} $1"; SKIPPED=$((SKIPPED + 1)); }
+print_fail() { echo -e "${RED}[✗]${NC} $1"; FAILED=$((FAILED + 1)); }
 print_info() { echo -e "${CYAN}[i]${NC} $1"; }
 print_header() { echo -e "\n${WHITE}=== $1 ===${NC}"; }
 print_check() { echo -e "${CYAN}[CHECK]${NC} $1"; }
+print_warning() { echo -e "${YELLOW}[!]${NC} $1"; }
+
+report_unchanged() { SKIPPED=$((SKIPPED + 1)); }
+report_changed() { print_success "$1"; }
+report_planned() { print_check "$1"; }
+report_warning() { print_warning "$1"; }
+report_failure() { print_fail "$1"; }
 
 show_help() {
     echo "Usage: ./update.sh [OPTIONS]"
@@ -105,24 +113,10 @@ command_exists() {
 
 # Get script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/lib/retired-entries.sh"
-
-remove_retired_entries() {
-    local subdir="$1"
-    local dest="$2"
-    local label="$3"
-    local name
-
-    while read -r name; do
-        [[ -e "$dest/$name" ]] || continue
-        if $CHECK_ONLY; then
-            print_check "$label $name was deleted from the repo"
-        else
-            rm -rf "${dest:?}/${name:?}"
-            print_success "Removed $label deleted from the repo: $name"
-        fi
-    done < <(retired_repo_entries "$SCRIPT_DIR" "$subdir")
-}
+REPO_DIR="$SCRIPT_DIR"
+source "$REPO_DIR/lib/claude-settings.sh"
+source "$REPO_DIR/lib/retired-entries.sh"
+source "$REPO_DIR/lib/config-install.sh"
 
 # Update repository
 update_repo() {
@@ -208,184 +202,17 @@ update_tools() {
     done
 }
 
-# Update configuration files
+# Update configuration files with the same steps install.sh runs
 update_config() {
-    print_header "Configuration Files"
-
-    # SwiftFormat config
-    local swiftformat_src="$SCRIPT_DIR/config/swiftformat.txt"
-    local swiftformat_dest="$HOME/.swiftformat"
-
-    if [[ -f "$swiftformat_src" ]]; then
-        if $CHECK_ONLY; then
-            if [[ -f "$swiftformat_dest" ]]; then
-                if ! diff -q "$swiftformat_src" "$swiftformat_dest" >/dev/null 2>&1; then
-                    print_check ".swiftformat has changes"
-                else
-                    print_info ".swiftformat is up to date"
-                fi
-            else
-                print_check ".swiftformat not installed"
-            fi
-        else
-            if [[ -f "$swiftformat_dest" ]]; then
-                if ! diff -q "$swiftformat_src" "$swiftformat_dest" >/dev/null 2>&1; then
-                    cp "$swiftformat_src" "$swiftformat_dest"
-                    print_success "Updated .swiftformat"
-                else
-                    print_skip ".swiftformat already up to date"
-                fi
-            else
-                cp "$swiftformat_src" "$swiftformat_dest"
-                print_success "Installed .swiftformat"
-            fi
-        fi
-    fi
-
-    # Claude configuration
-    local claude_src="$SCRIPT_DIR/claude/CLAUDE.md"
-    local claude_dest="$HOME/.claude/CLAUDE.md"
-
-    if [[ -f "$claude_src" ]]; then
-        if $CHECK_ONLY; then
-            if [[ -f "$claude_dest" ]]; then
-                if ! diff -q "$claude_src" "$claude_dest" >/dev/null 2>&1; then
-                    print_check "CLAUDE.md has changes"
-                else
-                    print_info "CLAUDE.md is up to date"
-                fi
-            else
-                print_check "CLAUDE.md not installed"
-            fi
-        else
-            mkdir -p "$HOME/.claude"
-            if [[ -f "$claude_dest" ]]; then
-                if ! diff -q "$claude_src" "$claude_dest" >/dev/null 2>&1; then
-                    cp "$claude_src" "$claude_dest"
-                    print_success "Updated CLAUDE.md"
-                else
-                    print_skip "CLAUDE.md already up to date"
-                fi
-            else
-                cp "$claude_src" "$claude_dest"
-                print_success "Installed CLAUDE.md"
-            fi
-        fi
-    fi
-
-    # Claude agents
-    local agents_src="$SCRIPT_DIR/claude/agents"
-    local agents_dest="$HOME/.claude/agents"
-
-    if [[ -d "$agents_src" ]]; then
-        if $CHECK_ONLY; then
-            local agents_changed=0
-            for agent in "$agents_src"/*.md; do
-                local agent_name=$(basename "$agent")
-                if [[ -f "$agents_dest/$agent_name" ]]; then
-                    if ! diff -q "$agent" "$agents_dest/$agent_name" >/dev/null 2>&1; then
-                        print_check "Agent $agent_name has changes"
-                        ((agents_changed++))
-                    fi
-                else
-                    print_check "Agent $agent_name not installed"
-                    ((agents_changed++))
-                fi
-            done
-            if [[ $agents_changed -eq 0 ]]; then
-                print_info "All agents are up to date"
-            fi
-        else
-            mkdir -p "$agents_dest"
-            local updated_agents=0
-            for agent in "$agents_src"/*.md; do
-                local agent_name=$(basename "$agent")
-                if [[ -f "$agents_dest/$agent_name" ]]; then
-                    if ! diff -q "$agent" "$agents_dest/$agent_name" >/dev/null 2>&1; then
-                        cp "$agent" "$agents_dest/"
-                        ((updated_agents++))
-                    fi
-                else
-                    cp "$agent" "$agents_dest/"
-                    ((updated_agents++))
-                fi
-            done
-            if [[ $updated_agents -gt 0 ]]; then
-                print_success "Updated $updated_agents agent(s)"
-            else
-                print_skip "All agents already up to date"
-            fi
-        fi
-    fi
-    remove_retired_entries "claude/agents" "$agents_dest" "Agent"
-
-    update_claude_skills
-
-    # Xcode themes
-    local themes_src="$SCRIPT_DIR/Themes"
-    local themes_dest="$XC_USER_DATA/FontAndColorThemes"
-
-    if [[ -d "$themes_src" ]] && [[ -d "$themes_dest" ]]; then
-        if $CHECK_ONLY; then
-            local themes_changed=0
-            for theme in "$themes_src"/*.xccolortheme; do
-                local theme_name=$(basename "$theme")
-                if [[ -f "$themes_dest/$theme_name" ]]; then
-                    if ! diff -q "$theme" "$themes_dest/$theme_name" >/dev/null 2>&1; then
-                        print_check "Theme $theme_name has changes"
-                        ((themes_changed++))
-                    fi
-                else
-                    print_check "Theme $theme_name not installed"
-                    ((themes_changed++))
-                fi
-            done
-            if [[ $themes_changed -eq 0 ]]; then
-                print_info "All Xcode themes are up to date"
-            fi
-        else
-            local updated_themes=0
-            for theme in "$themes_src"/*.xccolortheme; do
-                local theme_name=$(basename "$theme")
-                if [[ -f "$themes_dest/$theme_name" ]]; then
-                    if ! diff -q "$theme" "$themes_dest/$theme_name" >/dev/null 2>&1; then
-                        cp "$theme" "$themes_dest/"
-                        ((updated_themes++))
-                    fi
-                else
-                    cp "$theme" "$themes_dest/"
-                    ((updated_themes++))
-                fi
-            done
-            if [[ $updated_themes -gt 0 ]]; then
-                print_success "Updated $updated_themes Xcode theme(s)"
-            else
-                print_skip "All Xcode themes already up to date"
-            fi
-        fi
-    fi
-
-    # Custom scripts
-    local scripts_src="$SCRIPT_DIR/scripts/deeplink.sh"
-    local scripts_dest="$HOME/Developer/bin/deeplink.sh"
-
-    if [[ -f "$scripts_src" ]] && [[ -f "$scripts_dest" ]]; then
-        if $CHECK_ONLY; then
-            if ! diff -q "$scripts_src" "$scripts_dest" >/dev/null 2>&1; then
-                print_check "deeplink.sh has changes"
-            else
-                print_info "deeplink.sh is up to date"
-            fi
-        else
-            if ! diff -q "$scripts_src" "$scripts_dest" >/dev/null 2>&1; then
-                cp "$scripts_src" "$scripts_dest"
-                chmod +x "$scripts_dest"
-                print_success "Updated deeplink.sh"
-            else
-                print_skip "deeplink.sh already up to date"
-            fi
-        fi
-    fi
+    install_swiftformat_config
+    install_claude_config
+    install_claude_agents
+    install_claude_skills
+    install_claude_settings
+    install_custom_scripts
+    install_xcode_templates
+    install_xcode_themes
+    install_xcode_header
 }
 
 # Update Nerd Font
@@ -415,38 +242,6 @@ update_font() {
     print_info "Font reinstall not implemented (fonts don't have easy version detection)"
     print_info "To update: delete fonts from $font_dir and run install.sh"
     print_skip "Font update skipped"
-}
-
-# Each skill is a directory, so it is compared and copied as a whole tree
-update_claude_skills() {
-    local skills_src="$SCRIPT_DIR/claude/skills"
-    local skills_dest="$HOME/.claude/skills"
-
-    remove_retired_entries "claude/skills" "$skills_dest" "Skill"
-    [[ -d "$skills_src" ]] || return
-
-    local skills_changed=0
-    for skill in "$skills_src"/*/; do
-        [[ -d "$skill" ]] || continue
-        local skill_name
-        skill_name="$(basename "$skill")"
-        if diff -rq -x __pycache__ -x .DS_Store "$skill" "$skills_dest/$skill_name" >/dev/null 2>&1; then
-            continue
-        fi
-        skills_changed=$((skills_changed + 1))
-        if $CHECK_ONLY; then
-            print_check "Skill $skill_name has changes"
-        else
-            mkdir -p "$skills_dest"
-            rsync -a --delete --exclude __pycache__ --exclude .DS_Store "$skill" "$skills_dest/$skill_name/"
-        fi
-    done
-
-    if [[ $skills_changed -eq 0 ]]; then
-        $CHECK_ONLY && print_info "All skills are up to date" || print_skip "All skills already up to date"
-    elif ! $CHECK_ONLY; then
-        print_success "Updated $skills_changed skill(s)"
-    fi
 }
 
 print_summary() {
@@ -483,6 +278,8 @@ echo "╔═══════════════════════�
 echo "║          🔄 Configuration Update Script            ║"
 echo "╚════════════════════════════════════════════════════╝"
 echo -e "${NC}"
+
+DRY_RUN=$CHECK_ONLY
 
 if $CHECK_ONLY; then
     echo -e "${CYAN}Running in check mode - no changes will be made${NC}\n"

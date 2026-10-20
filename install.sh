@@ -4,6 +4,7 @@ set -euo pipefail
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$REPO_DIR/lib/claude-settings.sh"
 source "$REPO_DIR/lib/retired-entries.sh"
+source "$REPO_DIR/lib/config-install.sh"
 cd "$REPO_DIR"
 
 # Error handler - shows where the error occurred
@@ -322,61 +323,11 @@ print_updated() {
     echo -e "${GREEN}[↑]${NC} $1"
 }
 
-# Helper: install or update a single file
-install_or_update_file() {
-    local src="$1"
-    local dest="$2"
-    local label="$3"
-
-    if [[ ! -f "$src" ]]; then
-        print_warning "$label source not found: $src"
-        return 1
-    fi
-
-    if [[ -f "$dest" ]]; then
-        if diff -q "$src" "$dest" &>/dev/null; then
-            print_success "$label already up to date"
-            return 0
-        fi
-        if $DRY_RUN; then
-            print_dry_run "Update $label"
-        else
-            cp "$src" "$dest"
-            print_updated "$label updated"
-        fi
-    else
-        if $DRY_RUN; then
-            print_dry_run "Install $label"
-        else
-            mkdir -p "$(dirname "$dest")"
-            cp "$src" "$dest"
-            print_success "$label installed"
-        fi
-    fi
-}
-
-# Helper: install or update a directory
-install_or_update_dir() {
-    local src="$1"
-    local dest="$2"
-    local label="$3"
-
-    if [[ ! -d "$src" ]]; then
-        print_warning "$label source not found: $src"
-        return 1
-    fi
-
-    $DRY_RUN || mkdir -p "$dest"
-    for file in "$src"/*; do
-        local name
-        name="$(basename "$file")"
-        if [[ -d "$file" ]]; then
-            install_or_update_dir "$file" "$dest/$name" "$label/$name"
-        else
-            install_or_update_file "$file" "$dest/$name" "$label: $name"
-        fi
-    done
-}
+report_unchanged() { print_success "$1"; }
+report_changed() { print_updated "$1"; }
+report_planned() { print_dry_run "$1"; }
+report_warning() { print_warning "$1"; }
+report_failure() { print_fail "$1"; }
 
 # Validate system prerequisites
 validate_prerequisites() {
@@ -650,12 +601,6 @@ install_jetbrains_mono_nerd_font() {
     print_success "JetBrains Mono Nerd Font installed successfully"
 }
 
-# Function to install SwiftFormat configuration
-install_swiftformat_config() {
-    print_header "SwiftFormat Configuration"
-    install_or_update_file "config/swiftformat.txt" "$HOME/.swiftformat" "SwiftFormat configuration"
-}
-
 # Function to add aliases to .zshrc
 add_aliases_to_zshrc() {
     local zshrc_file="$HOME/.zshrc"
@@ -679,102 +624,6 @@ add_aliases_to_zshrc() {
             print_success "Aliases source added to .zshrc"
         fi
     fi
-}
-
-# Function to install Claude Code configuration
-install_claude_config() {
-    print_header "Claude Code Configuration"
-    install_or_update_file "claude/CLAUDE.md" "$HOME/.claude/CLAUDE.md" "CLAUDE.md"
-}
-
-# Function to install Claude Code settings
-install_claude_settings() {
-    print_header "Claude Code Settings"
-    local src="claude/settings.json"
-    local dest="$HOME/.claude/settings.json"
-
-    if [[ ! -f "$dest" ]]; then
-        install_or_update_file "$src" "$dest" "Claude settings"
-        return
-    fi
-
-    if ! command -v jq &>/dev/null; then
-        print_warning "jq not found: skipping Claude settings merge (brew install jq)"
-        return
-    fi
-
-    if ! jq empty "$dest" "$src" 2>/dev/null; then
-        print_warning "Invalid JSON in Claude settings: skipping merge (fix $dest)"
-        return
-    fi
-
-    local merged
-    merged="$(mktemp)"
-    if ! claude_settings_merge_owned "$dest" "$src" > "$merged"; then
-        print_warning "Claude settings merge failed: skipping"
-        rm -f "$merged"
-        return
-    fi
-
-    if claude_settings_equal "$merged" "$dest"; then
-        print_success "Claude settings already up to date"
-    elif $DRY_RUN; then
-        print_dry_run "Merge shared keys into Claude settings (local keys are kept)"
-    else
-        cp "$dest" "$dest.bak"
-        cp "$merged" "$dest"
-        print_updated "Claude settings merged (backup: $dest.bak)"
-    fi
-    rm -f "$merged"
-}
-
-# Function to install Claude agents
-install_claude_agents() {
-    print_header "Claude Agents Installation"
-    install_or_update_dir "claude/agents" "$HOME/.claude/agents" "Agent"
-    remove_retired_entries "claude/agents" "$HOME/.claude/agents" "Agent"
-}
-
-remove_retired_entries() {
-    local subdir="$1"
-    local dest="$2"
-    local label="$3"
-    local name
-
-    while read -r name; do
-        [[ -e "$dest/$name" ]] || continue
-        if $DRY_RUN; then
-            print_dry_run "Remove $label deleted from the repo: $name"
-        else
-            rm -rf "${dest:?}/${name:?}"
-            print_updated "Removed $label deleted from the repo: $name"
-        fi
-    done < <(retired_repo_entries "$REPO_DIR" "$subdir")
-}
-
-# Function to install Claude skills
-install_claude_skills() {
-    print_header "Claude Skills Installation"
-    remove_retired_entries "claude/skills" "$HOME/.claude/skills" "Skill"
-    if [[ ! -d "claude/skills" ]]; then
-        print_info "No skills in this repo"
-        return 0
-    fi
-    install_or_update_dir "claude/skills" "$HOME/.claude/skills" "Skill"
-}
-
-# Function to install custom scripts
-install_custom_scripts() {
-    print_header "Custom Scripts Installation"
-    local bin_dir="$HOME/Developer/bin"
-    $DRY_RUN || mkdir -p "$bin_dir"
-
-    for script in scripts/*.sh; do
-        local name
-        name="$(basename "$script")"
-        install_or_update_file "$script" "$bin_dir/$name" "Script: $name"
-        $DRY_RUN || chmod +x "$bin_dir/$name"
-    done
 }
 
 # Main installation process
@@ -863,25 +712,17 @@ fi
 
 # XCode templates
 if should_install "templates" "$INSTALL_TEMPLATES" "$SKIP_TEMPLATES"; then
-    print_header "Xcode Templates Installation"
-    install_or_update_dir "Templates" "$XC_DIR/Templates" "Template"
+    install_xcode_templates
 fi
 
 # Xcode themes
 if should_install "themes" "$INSTALL_THEMES" "$SKIP_THEMES"; then
-    print_header "Xcode Themes Installation"
-    themes_dest="$XC_USER_DATA/FontAndColorThemes"
-    $DRY_RUN || mkdir -p "$themes_dest"
-    for theme in Themes/*.xccolortheme; do
-        name="$(basename "$theme")"
-        install_or_update_file "$theme" "$themes_dest/$name" "Theme: $name"
-    done
+    install_xcode_themes
 fi
 
 # Xcode Header
 if should_install "header" "$INSTALL_HEADER" "$SKIP_HEADER"; then
-    print_header "Xcode Header Template"
-    install_or_update_file "Headers/IDETemplateMacros.plist" "$XC_USER_DATA/IDETemplateMacros.plist" "Header template"
+    install_xcode_header
 fi
 
 print_selected_components() {

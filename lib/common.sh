@@ -12,9 +12,8 @@ CYAN='\033[0;36m'
 WHITE='\033[1;37m'
 NC='\033[0m'
 
-# Can be set from outside, so tests can point the Xcode steps at a fake HOME
-XC_DIR="${XC_DIR:-$HOME/Library/Developer/Xcode}"
-XC_USER_DATA="${XC_USER_DATA:-$XC_DIR/UserData}"
+XC_DIR="$HOME/Library/Developer/Xcode"
+XC_USER_DATA="$XC_DIR/UserData"
 
 print_status() { echo -e "${BLUE}[*]${NC} $1"; }
 print_info() { echo -e "${CYAN}[i]${NC} $1"; }

@@ -4,46 +4,13 @@ REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$REPO_DIR/lib/common.sh"
 source "$REPO_DIR/lib/retired-entries.sh"
 
-# Counters
-PASSED=0
-FAILED=0
-WARNINGS=0
-
-# Function to print colored output
-print_pass() {
-    echo -e "${GREEN}[✓]${NC} $1"
-    PASSED=$((PASSED + 1))
-}
-
-print_fail() {
-    echo -e "${RED}[✗]${NC} $1"
-    FAILED=$((FAILED + 1))
-}
-
-print_warning() {
-    echo -e "${YELLOW}[!]${NC} $1"
-    WARNINGS=$((WARNINGS + 1))
-}
-
-print_banner() {
-    echo -e "${PURPLE}"
-    echo "╔══════════════════════════════════════════════════════════════╗"
-    echo "║                                                              ║"
-    echo "║           🏥 Development Environment Health Check 🏥         ║"
-    echo "║                                                              ║"
-    echo "║    Verifying your macOS development configuration...         ║"
-    echo "║                                                              ║"
-    echo "╚══════════════════════════════════════════════════════════════╝"
-    echo -e "${NC}"
-}
-
 # Check Homebrew
 check_homebrew() {
     print_header "Homebrew Package Manager"
     if command_exists brew; then
         local version
         version=$(brew --version | head -n1 | awk '{print $2}')
-        print_pass "Homebrew installed (version $version)"
+        print_success "Homebrew installed (version $version)"
         
         # Check if Homebrew is up to date
         local outdated
@@ -67,7 +34,7 @@ check_brewfile_tools() {
     for formula in $(brewfile_formulae "$REPO_DIR/Brewfile"); do
         version="$(formula_version "$installed" "$formula")"
         if [ -n "$version" ]; then
-            print_pass "$formula installed ($version)"
+            print_success "$formula installed ($version)"
         else
             print_fail "$formula not installed"
             print_info "Run './install.sh --only-tools'"
@@ -78,7 +45,7 @@ check_brewfile_tools() {
 check_swiftformat_config() {
     print_header "SwiftFormat Configuration"
     if [ -f "$HOME/.swiftformat" ]; then
-        print_pass "SwiftFormat configuration file found at ~/.swiftformat"
+        print_success "SwiftFormat configuration file found at ~/.swiftformat"
     else
         print_fail "SwiftFormat configuration file not found"
         print_info "Run './install.sh --only-swiftformat-config' to install it"
@@ -92,7 +59,7 @@ check_font() {
     font_count=$(nerd_font_files | wc -l | xargs)
 
     if [ "$font_count" -gt 0 ]; then
-        print_pass "JetBrains Mono Nerd Font installed ($font_count font files)"
+        print_success "JetBrains Mono Nerd Font installed ($font_count font files)"
         nerd_font_cask_installed || print_info "Installed by hand: './update.sh' can't upgrade it"
         print_info "Select it in your terminal profile if icons render as boxes"
     else
@@ -119,14 +86,14 @@ check_aliases() {
         alias_source="$aliases_file"
 
         if grep -q "source.*aliases.zsh" "$zshrc_file"; then
-            print_pass "Shell aliases sourced from ~/.config/aliases.zsh"
+            print_success "Shell aliases sourced from ~/.config/aliases.zsh"
         else
             print_fail "Aliases file exists but is not sourced in .zshrc"
             print_info "Run './install.sh --only-aliases' to add the source line"
         fi
     elif grep -q "# Git aliases" "$zshrc_file"; then
         alias_source="$zshrc_file"
-        print_pass "Shell aliases configured inline in .zshrc"
+        print_success "Shell aliases configured inline in .zshrc"
         print_info "Run './install.sh --only-aliases' to migrate them to ~/.config/aliases.zsh"
     else
         print_fail "Shell aliases not found"
@@ -154,12 +121,12 @@ check_scripts() {
     local bin_dir="$HOME/Developer/bin"
     
     if [ -d "$bin_dir" ]; then
-        print_pass "Scripts directory exists at ~/Developer/bin"
+        print_success "Scripts directory exists at ~/Developer/bin"
         
         # Check for deeplink script
         if [ -f "$bin_dir/deeplink.sh" ]; then
             if [ -x "$bin_dir/deeplink.sh" ]; then
-                print_pass "deeplink.sh installed and executable"
+                print_success "deeplink.sh installed and executable"
             else
                 print_warning "deeplink.sh found but not executable"
                 print_info "Run 'chmod +x $bin_dir/deeplink.sh'"
@@ -183,7 +150,7 @@ check_xcode_themes() {
         local theme_count
         theme_count=$(ls "$themes_dir"/*.xccolortheme 2>/dev/null | wc -l | xargs)
         if [ "$theme_count" -gt 0 ]; then
-            print_pass "Xcode themes directory found with $theme_count theme(s)"
+            print_success "Xcode themes directory found with $theme_count theme(s)"
             
             # Check for specific custom themes
             for theme in "Alfred Dark" "Alfred Light"; do
@@ -210,7 +177,7 @@ check_xcode_templates() {
         local template_count
         template_count=$(find "$templates_dir" -name "*.xctemplate" 2>/dev/null | wc -l | xargs)
         if [ "$template_count" -gt 0 ]; then
-            print_pass "Xcode templates found ($template_count template(s))"
+            print_success "Xcode templates found ($template_count template(s))"
         else
             print_warning "Templates directory exists but no templates found"
             print_info "Run './install.sh' to install templates"
@@ -227,7 +194,7 @@ check_xcode_header() {
     local header_file="$XC_USER_DATA/IDETemplateMacros.plist"
     
     if [ -f "$header_file" ]; then
-        print_pass "Xcode header template found"
+        print_success "Xcode header template found"
         
         # Check if it contains custom content
         if grep -q "FILEHEADER" "$header_file" 2>/dev/null; then
@@ -246,7 +213,7 @@ check_claude_config() {
     local claude_config="$claude_dir/CLAUDE.md"
     
     if [ -f "$claude_config" ]; then
-        print_pass "Claude Code configuration found at ~/.claude/CLAUDE.md"
+        print_success "Claude Code configuration found at ~/.claude/CLAUDE.md"
         
         # Check file size to ensure it's not empty
         local file_size
@@ -271,7 +238,7 @@ check_claude_agents() {
         local agent_count
         agent_count=$(ls "$agents_dir"/*.md 2>/dev/null | wc -l | xargs)
         if [ "$agent_count" -gt 0 ]; then
-            print_pass "Claude agents directory found with $agent_count agent(s)"
+            print_success "Claude agents directory found with $agent_count agent(s)"
             
             # List agents
             for agent_file in "$agents_dir"/*.md; do
@@ -317,7 +284,7 @@ check_claude_skills() {
         local skill_name
         skill_name="$(basename "$skill")"
         if [ -f "$skills_dir/$skill_name/SKILL.md" ]; then
-            print_pass "Claude skill installed: $skill_name"
+            print_success "Claude skill installed: $skill_name"
         else
             print_fail "Claude skill not installed: $skill_name"
             print_info "Run './install.sh --only-claude' to install it"
@@ -334,7 +301,7 @@ check_xcode() {
     if command_exists xcodebuild; then
         local xcode_version
         xcode_version=$(xcodebuild -version | head -n1)
-        print_pass "Xcode installed ($xcode_version)"
+        print_success "Xcode installed ($xcode_version)"
     else
         print_warning "Xcode or Command Line Tools not found"
         print_info "Some features may not work without Xcode"
@@ -347,7 +314,7 @@ check_git() {
     if command_exists git; then
         local git_version
         git_version=$(git --version | awk '{print $3}')
-        print_pass "Git installed (version $git_version)"
+        print_success "Git installed (version $git_version)"
         
         # Check Git user configuration
         local git_user
@@ -380,12 +347,12 @@ print_summary() {
     
     local total
     
-    total=$((PASSED + FAILED + WARNINGS))
+    total=$((SUCCEEDED + FAILED + WARNINGS))
     local health_percentage
-    health_percentage=$((PASSED * 100 / total))
+    health_percentage=$((SUCCEEDED * 100 / total))
     
     echo -e "\n${WHITE}Results:${NC}"
-    echo -e "  ${GREEN}✓ Passed:${NC}   $PASSED"
+    echo -e "  ${GREEN}✓ Passed:${NC}   $SUCCEEDED"
     echo -e "  ${RED}✗ Failed:${NC}   $FAILED"
     echo -e "  ${YELLOW}! Warnings:${NC} $WARNINGS"
     echo -e "  ${CYAN}━ Total:${NC}    $total"
@@ -417,7 +384,7 @@ print_summary() {
 }
 
 # Main execution
-print_banner
+print_banner "🏥 Development Environment Health Check"
 print_info "Starting health check...\n"
 
 check_homebrew

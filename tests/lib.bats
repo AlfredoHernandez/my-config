@@ -103,3 +103,25 @@ EOF
         [ ! -e "$REPO_DIR/claude/agents/$name" ]
     done
 }
+
+@test "the shared output helpers count each kind of result" {
+    source "$REPO_DIR/lib/common.sh"
+
+    print_success one >/dev/null
+    print_success two >/dev/null
+    print_updated three >/dev/null
+    print_skip four >/dev/null
+    print_warning five >/dev/null
+    print_fail six >/dev/null
+
+    [ "$SUCCEEDED $UPDATED $SKIPPED $WARNINGS $FAILED" = "2 1 1 1 1" ]
+}
+
+@test "the banner shows its title between two rules" {
+    source "$REPO_DIR/lib/common.sh"
+
+    run print_banner "Some Script"
+
+    [ "$(grep -c "━━━━" <<< "$output")" -eq 2 ]
+    grep -q "Some Script" <<< "$output"
+}

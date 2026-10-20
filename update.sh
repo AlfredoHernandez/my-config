@@ -22,18 +22,10 @@ UPDATE_FONT=false
 REPO_CHANGED=false
 REPO_PREVIOUS_COMMIT=""
 
-# Counters
-UPDATED=0
-SKIPPED=0
-FAILED=0
-
-print_success() { echo -e "${GREEN}[✓]${NC} $1"; UPDATED=$((UPDATED + 1)); }
-print_skip() { echo -e "${YELLOW}[−]${NC} $1"; SKIPPED=$((SKIPPED + 1)); }
-print_fail() { echo -e "${RED}[✗]${NC} $1"; FAILED=$((FAILED + 1)); }
 print_check() { echo -e "${CYAN}[CHECK]${NC} $1"; }
 
 report_unchanged() { SKIPPED=$((SKIPPED + 1)); }
-report_changed() { print_success "$1"; }
+report_changed() { print_updated "$1"; }
 report_planned() { print_check "$1"; }
 report_warning() { print_warning "$1"; }
 report_failure() { print_fail "$1"; }
@@ -138,7 +130,7 @@ update_repo() {
         local new_commit
         new_commit=$(git rev-parse HEAD)
         if [[ "$current_commit" != "$new_commit" ]]; then
-            print_success "Repository updated"
+            print_updated "Repository updated"
             REPO_CHANGED=true
             REPO_PREVIOUS_COMMIT="$current_commit"
         else
@@ -207,7 +199,7 @@ update_tools() {
 
     # Also installs the packages missing here, such as ones added to the Brewfile on another Mac
     if brew bundle install --file="$brewfile" --upgrade; then
-        print_success "Brewfile packages installed and up to date"
+        print_updated "Brewfile packages installed and up to date"
     else
         print_fail "brew bundle failed: run 'brew bundle install --file=$brewfile' to see why"
     fi
@@ -233,7 +225,7 @@ update_font() {
     if nerd_font_cask_installed; then
         if ! $CHECK_ONLY; then
             if brew upgrade --cask "$NERD_FONT_CASK"; then
-                print_success "JetBrains Mono Nerd Font up to date"
+                print_updated "JetBrains Mono Nerd Font up to date"
             else
                 print_fail "Could not upgrade the $NERD_FONT_CASK cask"
             fi
@@ -260,21 +252,15 @@ update_font() {
 
 print_summary() {
     echo ""
-    echo -e "${WHITE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     if $CHECK_ONLY; then
-        echo -e "${WHITE}Check Complete${NC}"
+        print_title "Check Complete"
     else
-        echo -e "${WHITE}Update Summary${NC}"
-    fi
-    echo -e "${WHITE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-
-    if ! $CHECK_ONLY; then
-        echo -e "  ${GREEN}✓ Updated:${NC} $UPDATED"
+        print_title "Update Summary"
+        echo -e "  ${GREEN}↑ Updated:${NC} $UPDATED"
         echo -e "  ${YELLOW}− Skipped:${NC} $SKIPPED"
         echo -e "  ${RED}✗ Failed:${NC}  $FAILED"
+        print_rule
     fi
-
-    echo -e "${WHITE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo ""
 
     if $CHECK_ONLY; then
@@ -288,11 +274,7 @@ print_summary() {
 
 # Main execution
 if ! is_restarted_run; then
-    echo -e "${WHITE}"
-    echo "╔════════════════════════════════════════════════════╗"
-    echo "║          🔄 Configuration Update Script            ║"
-    echo "╚════════════════════════════════════════════════════╝"
-    echo -e "${NC}"
+    print_banner "🔄 Configuration Update Script"
 fi
 
 DRY_RUN=$CHECK_ONLY
@@ -304,7 +286,7 @@ fi
 if $UPDATE_ALL || $UPDATE_REPO; then
     if is_restarted_run; then
         cd "$SCRIPT_DIR" || exit 1
-        print_success "Repository updated from $(git rev-parse --short "$RESTARTED_FROM") to $(git rev-parse --short HEAD), running its update.sh"
+        print_updated "Repository updated from $(git rev-parse --short "$RESTARTED_FROM") to $(git rev-parse --short HEAD), running its update.sh"
     else
         update_repo
         restart_if_repo_changed

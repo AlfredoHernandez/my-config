@@ -1,6 +1,6 @@
 #!/bin/bash
-# Shared by every script. Helpers that update a counter (print_success, print_fail, ...) stay in
-# each script, because each one counts different things; a script may also redefine any helper here.
+# Shared by every script. Each print_* helper below counts its kind of result, and each script
+# names those counts in its own summary.
 
 # shellcheck disable=SC2034  # the colors are used by the scripts that source this file
 RED='\033[0;31m'
@@ -15,10 +15,35 @@ NC='\033[0m'
 XC_DIR="$HOME/Library/Developer/Xcode"
 XC_USER_DATA="$XC_DIR/UserData"
 
+SUCCEEDED=0
+UPDATED=0
+SKIPPED=0
+WARNINGS=0
+FAILED=0
+
+print_success() { echo -e "${GREEN}[✓]${NC} $1"; SUCCEEDED=$((SUCCEEDED + 1)); }
+print_updated() { echo -e "${GREEN}[↑]${NC} $1"; UPDATED=$((UPDATED + 1)); }
+print_skip() { echo -e "${YELLOW}[−]${NC} $1"; SKIPPED=$((SKIPPED + 1)); }
+print_warning() { echo -e "${YELLOW}[!]${NC} $1"; WARNINGS=$((WARNINGS + 1)); }
+print_fail() { echo -e "${RED}[✗]${NC} $1"; FAILED=$((FAILED + 1)); }
+
 print_status() { echo -e "${BLUE}[*]${NC} $1"; }
 print_info() { echo -e "${CYAN}[i]${NC} $1"; }
 print_header() { echo -e "\n${WHITE}=== $1 ===${NC}"; }
-print_warning() { echo -e "${YELLOW}[!]${NC} $1"; }
+
+print_rule() { echo -e "${WHITE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"; }
+
+print_title() {
+    print_rule
+    echo -e "${WHITE}$1${NC}"
+    print_rule
+}
+
+print_banner() {
+    echo ""
+    print_title "$1"
+    echo ""
+}
 
 command_exists() {
     command -v "$1" >/dev/null 2>&1

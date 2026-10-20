@@ -6,34 +6,6 @@ source "$REPO_DIR/lib/common.sh"
 source "$REPO_DIR/lib/claude-settings.sh"
 source "$REPO_DIR/lib/retired-entries.sh"
 
-# Counters
-UPDATED=0
-UP_TO_DATE=0
-MISSING=0
-SKIPPED=0
-CHANGES=()
-
-print_updated() {
-    echo -e "${GREEN}[↑]${NC} $1"
-    UPDATED=$((UPDATED + 1))
-    CHANGES+=("$1")
-}
-
-print_ok() {
-    echo -e "${CYAN}[✓]${NC} $1"
-    UP_TO_DATE=$((UP_TO_DATE + 1))
-}
-
-print_missing() {
-    echo -e "${YELLOW}[−]${NC} $1"
-    MISSING=$((MISSING + 1))
-}
-
-print_skipped() {
-    echo -e "${RED}[!]${NC} $1"
-    SKIPPED=$((SKIPPED + 1))
-}
-
 # Compare and sync a single file
 # Returns 0 if updated, 1 if up-to-date, 2 if source missing, 3 if the repo copy is newer
 sync_file() {
@@ -42,7 +14,7 @@ sync_file() {
     local label="$3"
 
     if [[ ! -f "$source" ]]; then
-        print_missing "$label (not installed)"
+        print_skip "$label (not installed)"
         return 2
     fi
 
@@ -55,7 +27,7 @@ sync_file() {
 
     if ! diff -q "$source" "$dest" &>/dev/null; then
         if [[ "$dest" -nt "$source" ]]; then
-            print_skipped "$label (repo copy is newer: run ./install.sh first)"
+            print_warning "$label (repo copy is newer: run ./install.sh first)"
             return 3
         fi
         cp "$source" "$dest"
@@ -63,7 +35,7 @@ sync_file() {
         return 0
     fi
 
-    print_ok "$label"
+    print_success "$label"
     return 1
 }
 
@@ -74,7 +46,7 @@ sync_dir() {
     local label="$3"
 
     if [[ ! -d "$source" ]] || [[ -z "$(ls -A "$source" 2>/dev/null)" ]]; then
-        print_missing "$label (not installed)"
+        print_skip "$label (not installed)"
         return 2
     fi
 
@@ -109,7 +81,7 @@ sync_themes() {
             sync_file "$theme" "$REPO_DIR/Themes/$name" "Theme: $name"
         done
     else
-        print_missing "No Xcode themes installed"
+        print_skip "No Xcode themes installed"
     fi
 }
 
@@ -138,7 +110,7 @@ sync_scripts() {
             sync_file "$script" "$REPO_DIR/scripts/$name" "Script: $name"
         done
     else
-        print_missing "No custom scripts installed"
+        print_skip "No custom scripts installed"
     fi
 }
 
@@ -155,7 +127,7 @@ sync_aliases() {
     fi
 
     if [[ ! -f "$zshrc" ]] || ! grep -q "# Git aliases" "$zshrc" 2>/dev/null; then
-        print_missing "No aliases found in ~/.config/aliases.zsh or .zshrc"
+        print_skip "No aliases found in ~/.config/aliases.zsh or .zshrc"
         return
     fi
 
@@ -168,10 +140,10 @@ sync_aliases() {
             cp "$tmp" "$dest"
             print_updated "Aliases (legacy inline .zshrc block)"
         else
-            print_ok "Aliases"
+            print_success "Aliases"
         fi
     else
-        print_missing "No aliases section found in .zshrc"
+        print_skip "No aliases section found in .zshrc"
     fi
     rm -f "$tmp"
 }
@@ -183,17 +155,17 @@ sync_claude_settings() {
     local label="Claude: settings.json (shared keys)"
 
     if [[ ! -f "$installed" ]]; then
-        print_missing "$label (not installed)"
+        print_skip "$label (not installed)"
         return
     fi
     if ! command -v jq &>/dev/null; then
-        print_missing "$label (jq not installed)"
+        print_skip "$label (jq not installed)"
         return
     fi
 
     [[ -f "$repo_file" ]] || echo '{}' > "$repo_file"
     if ! jq empty "$installed" "$repo_file" 2>/dev/null; then
-        print_missing "$label (invalid JSON)"
+        print_skip "$label (invalid JSON)"
         return
     fi
 
@@ -202,13 +174,13 @@ sync_claude_settings() {
     merged="$(mktemp)"
     if ! claude_settings_owned_subset "$installed" "$repo_file" > "$owned" ||
        ! claude_settings_merge_owned "$repo_file" "$owned" > "$merged"; then
-        print_missing "$label (merge failed)"
+        print_skip "$label (merge failed)"
         rm -f "$owned" "$merged"
         return
     fi
 
     if claude_settings_equal "$merged" "$repo_file"; then
-        print_ok "$label"
+        print_success "$label"
     else
         cp "$merged" "$repo_file"
         print_updated "$label"
@@ -231,13 +203,13 @@ sync_claude() {
             local name
             name="$(basename "$agent")"
             if grep -qxF "$name" <<< "$retired"; then
-                print_skipped "Claude agent: $name (deleted from the repo: run ./install.sh to remove it)"
+                print_warning "Claude agent: $name (deleted from the repo: run ./install.sh to remove it)"
                 continue
             fi
             sync_file "$agent" "$REPO_DIR/claude/agents/$name" "Claude agent: $name"
         done
     else
-        print_missing "No Claude agents installed"
+        print_skip "No Claude agents installed"
     fi
 
     sync_claude_skills
@@ -256,11 +228,11 @@ sync_claude_skills() {
         if [[ -f "$skills_dir/$name/SKILL.md" ]]; then
             sync_dir "$skills_dir/$name" "${skill%/}" "Claude skill: $name"
         else
-            print_missing "Claude skill: $name (not installed)"
+            print_skip "Claude skill: $name (not installed)"
         fi
     done
 
-    $tracked || print_ok "No Claude skills tracked in the repo"
+    $tracked || print_success "No Claude skills tracked in the repo"
 }
 
 # Sync SwiftFormat configuration
@@ -272,17 +244,15 @@ sync_swiftformat() {
 # Print summary and suggest commit
 print_summary() {
     echo ""
-    echo -e "${WHITE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${WHITE}Backup Summary${NC}"
-    echo -e "${WHITE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "  ${GREEN}↑ Updated:${NC}    $UPDATED"
-    echo -e "  ${CYAN}✓ Up to date:${NC} $UP_TO_DATE"
-    echo -e "  ${YELLOW}− Missing:${NC}    $MISSING"
-    echo -e "  ${RED}! Skipped:${NC}    $SKIPPED"
-    echo -e "${WHITE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    print_title "Backup Summary"
+    echo -e "  ${GREEN}↑ Updated:${NC}       $UPDATED"
+    echo -e "  ${GREEN}✓ Up to date:${NC}    $SUCCEEDED"
+    echo -e "  ${YELLOW}− Missing:${NC}       $SKIPPED"
+    echo -e "  ${YELLOW}! Newer in repo:${NC} $WARNINGS"
+    print_rule
     echo ""
 
-    if [[ $SKIPPED -gt 0 ]]; then
+    if [[ $WARNINGS -gt 0 ]]; then
         echo -e "${RED}Some files were skipped because this Mac is behind the repo.${NC}"
         echo -e "Run ${WHITE}./install.sh${NC} to bring it in sync, then sync again."
         echo ""
@@ -299,11 +269,7 @@ print_summary() {
 }
 
 # Main execution
-echo -e "${WHITE}"
-echo "╔════════════════════════════════════════════════════╗"
-echo "║          🔄 Configuration Sync Script              ║"
-echo "╚════════════════════════════════════════════════════╝"
-echo -e "${NC}"
+print_banner "🔄 Configuration Sync Script"
 
 sync_themes
 sync_header

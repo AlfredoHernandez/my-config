@@ -16,14 +16,6 @@ REMOVE_SCRIPTS=false
 REMOVE_XCODE=false
 REMOVE_CLAUDE=false
 
-# Counters
-REMOVED=0
-SKIPPED=0
-FAILED=0
-
-print_success() { echo -e "${GREEN}[✓]${NC} $1"; REMOVED=$((REMOVED + 1)); }
-print_skip() { echo -e "${YELLOW}[−]${NC} $1"; SKIPPED=$((SKIPPED + 1)); }
-print_fail() { echo -e "${RED}[✗]${NC} $1"; FAILED=$((FAILED + 1)); }
 print_dry_run() { echo -e "${YELLOW}[DRY-RUN]${NC} Would remove: $1"; }
 
 show_help() {
@@ -352,21 +344,15 @@ remove_repo_entries() {
 # Print summary
 print_summary() {
     echo ""
-    echo -e "${WHITE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     if $DRY_RUN; then
-        echo -e "${WHITE}Dry Run Complete${NC}"
+        print_title "Dry Run Complete"
     else
-        echo -e "${WHITE}Uninstall Summary${NC}"
-    fi
-    echo -e "${WHITE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-
-    if ! $DRY_RUN; then
-        echo -e "  ${GREEN}✓ Removed:${NC} $REMOVED"
+        print_title "Uninstall Summary"
+        echo -e "  ${GREEN}✓ Removed:${NC} $SUCCEEDED"
         echo -e "  ${YELLOW}− Skipped:${NC} $SKIPPED"
         echo -e "  ${RED}✗ Failed:${NC}  $FAILED"
+        print_rule
     fi
-
-    echo -e "${WHITE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo ""
 
     if $DRY_RUN; then
@@ -379,11 +365,7 @@ print_summary() {
 }
 
 # Main execution
-echo -e "${WHITE}"
-echo "╔════════════════════════════════════════════════════╗"
-echo "║          🗑️  Configuration Uninstall Script         ║"
-echo "╚════════════════════════════════════════════════════╝"
-echo -e "${NC}"
+print_banner "🗑️  Configuration Uninstall Script"
 
 if $DRY_RUN; then
     echo -e "${CYAN}Running in dry-run mode - no changes will be made${NC}\n"
@@ -429,6 +411,6 @@ fi
 
 print_summary
 
-if ! $DRY_RUN && [[ $REMOVED -gt 0 ]]; then
+if ! $DRY_RUN && [[ $SUCCEEDED -gt 0 ]]; then
     echo -e "\n${YELLOW}Note:${NC} Restart your terminal for alias changes to take effect."
 fi

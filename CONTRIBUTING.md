@@ -53,6 +53,7 @@ Fixes #123
 - Use `[[ ]]` for conditionals (bash-specific)
 - Add comments for non-obvious logic
 - Use functions for reusable code blocks
+- Print results with the helpers in `lib/common.sh` (`print_success`, `print_updated`, `print_skip`, `print_warning`, `print_fail`), which keep the counts each script shows in its summary, and start each script with `print_banner`
 
 ### Naming Conventions
 

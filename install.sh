@@ -272,25 +272,8 @@ should_install() {
     return 1
 }
 
-# Function to print colored output
-print_success() {
-    echo -e "${GREEN}[✓]${NC} $1"
-}
-
 print_dry_run() {
     echo -e "${YELLOW}[DRY-RUN]${NC} Would: $1"
-}
-
-print_pass() {
-    echo -e "${GREEN}[✓]${NC} $1"
-}
-
-print_fail() {
-    echo -e "${RED}[✗]${NC} $1"
-}
-
-print_updated() {
-    echo -e "${GREEN}[↑]${NC} $1"
 }
 
 report_unchanged() { print_success "$1"; }
@@ -301,71 +284,54 @@ report_failure() { print_fail "$1"; }
 
 # Validate system prerequisites
 validate_prerequisites() {
-    echo -e "${WHITE}"
-    echo "╔══════════════════════════════════════════════════════════════╗"
-    echo "║              🔍 System Prerequisites Check                    ║"
-    echo "╚══════════════════════════════════════════════════════════════╝"
-    echo -e "${NC}"
-
-    local passed=0
-    local failed=0
+    print_banner "🔍 System Prerequisites Check"
 
     # Check macOS
     print_header "Operating System"
     if [[ "$(uname)" == "Darwin" ]]; then
         local macos_version
         macos_version=$(sw_vers -productVersion) || true
-        print_pass "macOS detected (version $macos_version)"
-        passed=$((passed + 1))
+        print_success "macOS detected (version $macos_version)"
     else
         print_fail "macOS required (detected: $(uname))"
-        failed=$((failed + 1))
     fi
 
     # Check architecture
     local arch
     arch=$(uname -m) || true
     if [[ "$arch" == "arm64" ]]; then
-        print_pass "Apple Silicon detected"
+        print_success "Apple Silicon detected"
     else
-        print_pass "Intel Mac detected"
+        print_success "Intel Mac detected"
     fi
-    passed=$((passed + 1))
 
     # Check Xcode Command Line Tools
     print_header "Development Tools"
     if xcode-select -p &>/dev/null; then
-        print_pass "Xcode Command Line Tools installed"
-        passed=$((passed + 1))
+        print_success "Xcode Command Line Tools installed"
     else
         print_fail "Xcode Command Line Tools not installed"
         print_info "  Install with: xcode-select --install"
-        failed=$((failed + 1))
     fi
 
     # Check Git
     if command -v git &>/dev/null; then
         local git_version
         git_version=$(git --version | awk '{print $3}') || true
-        print_pass "Git installed (version $git_version)"
-        passed=$((passed + 1))
+        print_success "Git installed (version $git_version)"
     else
         print_fail "Git not installed"
-        failed=$((failed + 1))
     fi
 
     # Check curl
     if command -v curl &>/dev/null; then
-        print_pass "curl installed"
-        passed=$((passed + 1))
+        print_success "curl installed"
     else
         print_fail "curl not installed (required for downloads)"
-        failed=$((failed + 1))
     fi
 
     if command -v jq &>/dev/null; then
-        print_pass "jq installed"
-        passed=$((passed + 1))
+        print_success "jq installed"
     else
         print_warning "jq not installed: the Claude settings merge will be skipped"
         print_info "  Install with: ./install.sh --only-tools"
@@ -374,12 +340,10 @@ validate_prerequisites() {
     # Check network connectivity
     print_header "Network"
     if curl -s --head --connect-timeout 5 https://github.com &>/dev/null; then
-        print_pass "Network connectivity OK (github.com reachable)"
-        passed=$((passed + 1))
+        print_success "Network connectivity OK (github.com reachable)"
     else
         print_fail "Cannot reach github.com"
         print_info "  Check your internet connection"
-        failed=$((failed + 1))
     fi
 
     # Check disk space
@@ -387,29 +351,23 @@ validate_prerequisites() {
     local available_space
     available_space=$(df -g "$HOME" | awk 'NR==2 {print $4}') || true
     if [[ "$available_space" -ge 1 ]]; then
-        print_pass "Sufficient disk space (${available_space}GB available)"
-        passed=$((passed + 1))
+        print_success "Sufficient disk space (${available_space}GB available)"
     else
         print_fail "Low disk space (${available_space}GB available, need at least 1GB)"
-        failed=$((failed + 1))
     fi
 
     # Check write permissions
     print_header "Permissions"
     if [[ -w "$HOME" ]]; then
-        print_pass "Home directory writable"
-        passed=$((passed + 1))
+        print_success "Home directory writable"
     else
         print_fail "Cannot write to home directory"
-        failed=$((failed + 1))
     fi
 
     if [[ -w "$HOME/Library/Fonts" ]] || { $DRY_RUN && [[ -w "$HOME" ]]; } || mkdir -p "$HOME/Library/Fonts" 2>/dev/null; then
-        print_pass "Fonts directory accessible"
-        passed=$((passed + 1))
+        print_success "Fonts directory accessible"
     else
         print_fail "Cannot access fonts directory"
-        failed=$((failed + 1))
     fi
 
     # Check shell
@@ -417,27 +375,23 @@ validate_prerequisites() {
     local current_shell
     current_shell=$(basename "$SHELL") || true
     if [[ "$current_shell" == "zsh" ]]; then
-        print_pass "Using zsh (recommended)"
-        passed=$((passed + 1))
+        print_success "Using zsh (recommended)"
     elif [[ "$current_shell" == "bash" ]]; then
         print_warning "Using bash (zsh recommended for aliases)"
-        passed=$((passed + 1))
     else
         print_info "Using $current_shell"
-        passed=$((passed + 1))
     fi
 
     # Summary
     echo ""
-    echo -e "${WHITE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${WHITE}Validation Summary${NC}"
-    echo -e "${WHITE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "  ${GREEN}✓ Passed:${NC} $passed"
-    echo -e "  ${RED}✗ Failed:${NC} $failed"
-    echo -e "${WHITE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    print_title "Validation Summary"
+    echo -e "  ${GREEN}✓ Passed:${NC}   $SUCCEEDED"
+    echo -e "  ${YELLOW}! Warnings:${NC} $WARNINGS"
+    echo -e "  ${RED}✗ Failed:${NC}   $FAILED"
+    print_rule
     echo ""
 
-    if [[ $failed -eq 0 ]]; then
+    if [[ $FAILED -eq 0 ]]; then
         echo -e "${GREEN}All prerequisites met! Ready to install.${NC}"
         echo -e "${CYAN}Run ./install.sh to begin installation.${NC}"
         return 0
@@ -453,25 +407,6 @@ if $VALIDATE_ONLY; then
     validate_prerequisites
     exit $?
 fi
-
-print_banner() {
-    echo -e "${PURPLE}"
-    echo "╔══════════════════════════════════════════════════════════════╗"
-    echo "║                                                              ║"
-    echo "║           🚀 My Development Configuration Setup 🚀           ║"
-    echo "║                                                              ║"
-    echo "║    Setting up your macOS development environment with:       ║"
-    echo "║    • Homebrew package manager                               ║"
-    echo "║    • jq, eza and SwiftFormat (Brewfile)                     ║"
-    echo "║    • JetBrains Mono Nerd Font                               ║"
-    echo "║    • Claude Code configuration, agents and skills           ║"
-    echo "║    • Custom shell aliases                                   ║"
-    echo "║    • Xcode themes and templates                             ║"
-    echo "║    • Development scripts                                    ║"
-    echo "║                                                              ║"
-    echo "╚══════════════════════════════════════════════════════════════╝"
-    echo -e "${NC}"
-}
 
 # Function to install Homebrew if not present
 install_homebrew() {
@@ -573,12 +508,9 @@ add_aliases_to_zshrc() {
 }
 
 # Main installation process
-print_banner
+print_banner "🚀 My Development Configuration Setup"
 if $DRY_RUN; then
-    echo -e "${YELLOW}╔══════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${YELLOW}║                      DRY RUN MODE                            ║${NC}"
-    echo -e "${YELLOW}║           No changes will be made to your system             ║${NC}"
-    echo -e "${YELLOW}╚══════════════════════════════════════════════════════════════╝${NC}"
+    echo -e "${YELLOW}DRY RUN MODE: no changes will be made to your system${NC}"
 fi
 
 # Show what will be installed
@@ -724,7 +656,8 @@ else
 fi
 
 if ! $DRY_RUN && $VERIFY; then
-    echo -e "\n${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+    print_rule
     echo -e "${WHITE}Running post-installation verification...${NC}\n"
 
     if [[ -f "$REPO_DIR/health-check.sh" ]]; then

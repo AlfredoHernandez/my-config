@@ -11,7 +11,8 @@
       "Bash",
       "WebFetch",
       "WebSearch",
-      "mcp__claude-in-chrome__*"
+      "mcp__claude-in-chrome__*",
+      "mcp__codegraph__*"
     ],
     "ask": [
       "Bash(rm -rf:*)",

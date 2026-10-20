@@ -3,6 +3,7 @@ name: kotlin-testing
 description: "Kotlin/Android testing expert (JUnit 4/5, Kotest) for TDD and existing code. Use for any test-related work: \"write test\", \"add tests\", \"TDD\", \"test this\", \"create mock/stub/spy/fake\", \"improve test names\", or any Kotlin test file. Adapts its workflow to TDD vs existing code."
 tools: "Read, Edit, Write, Grep, Glob, Bash"
 model: sonnet
+effort: medium
 color: blue
 ---
 

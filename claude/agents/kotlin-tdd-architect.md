@@ -2,6 +2,7 @@
 name: "kotlin-tdd-architect"
 description: "Use this agent to build a Kotlin / Android feature end-to-end: analyze it, implement it test-first with TDD, commit it atomically, then run code-review rounds fixing findings until clean. Owns architectural decisions. Orchestrates kotlin-testing, kotlin-test-doubles-architect, code-review and design-patterns."
 model: opus
+effort: high
 color: green
 memory: user
 ---

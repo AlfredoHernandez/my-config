@@ -3,6 +3,7 @@ name: release-notes
 description: Release notes and changelog writer. Use when asked to "write release notes", "draft changelog", "summarize release", or when preparing a tag / version. Generates user-facing notes from commits between two refs (tags, branches, or dates).
 tools: Read, Bash, Grep, Glob
 model: sonnet
+effort: medium
 color: red
 ---
 

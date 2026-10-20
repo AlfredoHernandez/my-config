@@ -3,6 +3,7 @@ name: pr-description
 description: PR description writer. Use when asked to "write PR description", "create PR body", "summarize branch", or before opening a pull request. Reads the commits and diff of the current branch and returns a title, a body (Why / Use cases / What changed) and suggested labels.
 tools: Read, Bash, Grep, Glob
 model: sonnet
+effort: medium
 color: red
 ---
 

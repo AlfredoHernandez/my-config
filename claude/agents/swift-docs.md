@@ -3,6 +3,7 @@ name: swift-docs
 description: "Swift documentation specialist following Apple conventions. Use when asked to document a Swift API or its contract (\"document this\", \"add docstrings\", \"improve documentation\"). Writes Xcode Quick Help compatible doc comments only where they add a contract, and removes comments that restate the code."
 tools: "Read, Edit, Write, Grep, Glob"
 model: sonnet
+effort: medium
 color: cyan
 ---
 You are an expert Swift documentation writer following Apple's Swift-flavored Markdown conventions for Xcode Quick Help.

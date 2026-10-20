@@ -2,6 +2,7 @@
 name: "swift-test-doubles-architect"
 description: "Use this agent when the work is SPECIFICALLY about test-double design or refactor — choosing the right kind of double per behavior, splitting a 'Mock' that conflates stub+spy+mock responsibilities, introducing a protocol seam to make a collaborator testable, or auditing test doubles for Sendable correctness. Sister to `swift-testing`, which handles general test writing, naming and suite structure."
 model: sonnet
+effort: high
 color: green
 memory: user
 ---

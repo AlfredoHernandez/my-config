@@ -3,6 +3,7 @@ name: swift-testing
 description: "Swift Testing framework expert (WWDC 2024) for TDD and existing code. Use for any test-related work: \"write test\", \"add tests\", \"TDD\", \"test this\", \"create mock/stub/spy\", \"improve test names\", or any Swift test file. Adapts its workflow to TDD vs existing code."
 tools: "Read, Edit, Write, Grep, Glob, Bash"
 model: sonnet
+effort: medium
 color: green
 ---
 

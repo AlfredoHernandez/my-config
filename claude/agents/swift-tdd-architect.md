@@ -2,6 +2,7 @@
 name: "swift-tdd-architect"
 description: "Use this agent to build a Swift / Apple-platform feature end-to-end: analyze it, implement it test-first with TDD, commit it atomically, then run code-review rounds fixing findings until clean. Owns architectural decisions. Orchestrates swift-testing, swift-docs, code-review and design-patterns."
 model: opus
+effort: high
 color: orange
 memory: user
 ---

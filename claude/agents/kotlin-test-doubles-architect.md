@@ -2,6 +2,7 @@
 name: "kotlin-test-doubles-architect"
 description: "Use this agent when the work is SPECIFICALLY about test-double design or refactor in Kotlin/Android — choosing the right kind of double per behavior, splitting a 'Mock' that conflates stub+spy+mock responsibilities, introducing an interface seam to make a concrete collaborator testable, or auditing test doubles for thread-safety under coroutines. Sister to `kotlin-testing`, which handles general test writing, naming and suite structure."
 model: sonnet
+effort: high
 color: blue
 memory: user
 ---

@@ -880,6 +880,11 @@ print_next_steps() {
     return 0
 }
 
+if [[ -z "$(print_selected_components "")" ]]; then
+    print_warning "No components selected: nothing to install"
+    exit 0
+fi
+
 # Final message
 if $DRY_RUN; then
     print_header "Dry Run Complete!"

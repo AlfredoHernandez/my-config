@@ -182,3 +182,15 @@ install_font_by_hand() {
     grep -q "1 step(s) failed" <<< "$output"
     refute_output_matches "installed successfully"
 }
+
+@test "uninstall reports a font file it can't remove only as a failure" {
+    fake_brew
+    install_font_by_hand
+    chmod 555 "$HOME/Library/Fonts"
+
+    run_script "$REPO_DIR/uninstall.sh" --font --force
+    chmod 755 "$HOME/Library/Fonts"
+
+    grep -q "Failed to remove" <<< "$output"
+    refute_output_matches "Removed JetBrains Mono Nerd Font"
+}

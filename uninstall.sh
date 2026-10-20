@@ -168,11 +168,15 @@ remove_font() {
     fi
 
     print_status "Removing font files..."
-    local file
+    local file all_removed=true
     while IFS= read -r file; do
-        rm -f "$file" || print_fail "Failed to remove $file"
+        if ! rm -f "$file"; then
+            print_fail "Failed to remove $file"
+            all_removed=false
+        fi
     done <<< "$files"
-    print_success "Removed JetBrains Mono Nerd Font"
+    $all_removed && print_success "Removed JetBrains Mono Nerd Font"
+    return 0
 }
 
 # Remove SwiftFormat configuration

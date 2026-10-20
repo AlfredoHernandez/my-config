@@ -46,6 +46,7 @@ This repository contains my personal development configuration that I use across
   - `kotlin-testing` - Kotlin / Android testing expert
   - `kotlin-test-doubles-architect` - Test double design for Kotlin
 - **Custom Skills** - Skill directories (each with a `SKILL.md`) installed to `~/.claude/skills/`; none are tracked yet
+- **Deleted agents and skills** - When an agent or skill is deleted from the repo (or renamed), `install.sh` and `update.sh` remove it from `~/.claude`, so every Mac stays in sync. The list comes from git history, so agents and skills that never were in the repo are kept. `sync.sh` does not copy them back, and `health-check.sh` warns if one is still installed
 
 ### 🔤 Fonts
 - **JetBrains Mono Nerd Font** - Programming font with ligatures and icons

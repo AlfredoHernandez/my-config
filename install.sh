@@ -3,6 +3,7 @@ set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$REPO_DIR/lib/claude-settings.sh"
+source "$REPO_DIR/lib/retired-entries.sh"
 cd "$REPO_DIR"
 
 # Error handler - shows where the error occurred
@@ -731,11 +732,30 @@ install_claude_settings() {
 install_claude_agents() {
     print_header "Claude Agents Installation"
     install_or_update_dir "claude/agents" "$HOME/.claude/agents" "Agent"
+    remove_retired_entries "claude/agents" "$HOME/.claude/agents" "Agent"
+}
+
+remove_retired_entries() {
+    local subdir="$1"
+    local dest="$2"
+    local label="$3"
+    local name
+
+    while read -r name; do
+        [[ -e "$dest/$name" ]] || continue
+        if $DRY_RUN; then
+            print_dry_run "Remove $label deleted from the repo: $name"
+        else
+            rm -rf "${dest:?}/${name:?}"
+            print_updated "Removed $label deleted from the repo: $name"
+        fi
+    done < <(retired_repo_entries "$REPO_DIR" "$subdir")
 }
 
 # Function to install Claude skills
 install_claude_skills() {
     print_header "Claude Skills Installation"
+    remove_retired_entries "claude/skills" "$HOME/.claude/skills" "Skill"
     if [[ ! -d "claude/skills" ]]; then
         print_info "No skills in this repo"
         return 0

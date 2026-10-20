@@ -69,7 +69,8 @@ my-config/
 ├── uninstall.sh         # Remove installed components
 ├── health-check.sh      # Verify installation status
 ├── lib/
-│   └── claude-settings.sh  # Claude settings merge shared by install.sh and sync.sh
+│   ├── claude-settings.sh  # Claude settings merge shared by install.sh and sync.sh
+│   └── retired-entries.sh  # Agents and skills deleted from the repo, read from git history
 ├── config/              # Configuration files
 │   ├── aliases.zsh      # Shell aliases
 │   └── swiftformat.txt  # SwiftFormat configuration

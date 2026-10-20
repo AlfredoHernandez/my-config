@@ -105,6 +105,24 @@ command_exists() {
 
 # Get script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/lib/retired-entries.sh"
+
+remove_retired_entries() {
+    local subdir="$1"
+    local dest="$2"
+    local label="$3"
+    local name
+
+    while read -r name; do
+        [[ -e "$dest/$name" ]] || continue
+        if $CHECK_ONLY; then
+            print_check "$label $name was deleted from the repo"
+        else
+            rm -rf "${dest:?}/${name:?}"
+            print_success "Removed $label deleted from the repo: $name"
+        fi
+    done < <(retired_repo_entries "$SCRIPT_DIR" "$subdir")
+}
 
 # Update repository
 update_repo() {
@@ -299,6 +317,7 @@ update_config() {
             fi
         fi
     fi
+    remove_retired_entries "claude/agents" "$agents_dest" "Agent"
 
     update_claude_skills
 
@@ -403,6 +422,7 @@ update_claude_skills() {
     local skills_src="$SCRIPT_DIR/claude/skills"
     local skills_dest="$HOME/.claude/skills"
 
+    remove_retired_entries "claude/skills" "$skills_dest" "Skill"
     [[ -d "$skills_src" ]] || return
 
     local skills_changed=0

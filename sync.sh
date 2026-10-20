@@ -2,6 +2,7 @@
 set -uo pipefail
 
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/claude-settings.sh"
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/retired-entries.sh"
 
 USER="$(whoami)"
 XC_DIR="/Users/$USER/Library/Developer/Xcode"
@@ -239,9 +240,15 @@ sync_claude() {
     # Sync agents
     local agents_dir="$HOME/.claude/agents"
     if [[ -d "$agents_dir" ]] && [[ -n "$(ls -A "$agents_dir" 2>/dev/null)" ]]; then
+        local retired
+        retired="$(retired_repo_entries "$REPO_DIR" "claude/agents")"
         for agent in "$agents_dir"/*.md; do
             local name
             name="$(basename "$agent")"
+            if grep -qxF "$name" <<< "$retired"; then
+                print_skipped "Claude agent: $name (deleted from the repo: run ./install.sh to remove it)"
+                continue
+            fi
             sync_file "$agent" "$REPO_DIR/claude/agents/$name" "Claude agent: $name"
         done
     else
@@ -291,8 +298,8 @@ print_summary() {
     echo ""
 
     if [[ $SKIPPED -gt 0 ]]; then
-        echo -e "${RED}Some repo files are newer than the installed copies and were not overwritten.${NC}"
-        echo -e "Run ${WHITE}./install.sh${NC} to install them, then sync again."
+        echo -e "${RED}Some files were skipped because this Mac is behind the repo.${NC}"
+        echo -e "Run ${WHITE}./install.sh${NC} to bring it in sync, then sync again."
         echo ""
     fi
 

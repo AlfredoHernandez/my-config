@@ -4,6 +4,7 @@ USER="$(whoami)"
 XC_DIR="/Users/$USER/Library/Developer/Xcode"
 XC_USER_DATA="$XC_DIR/UserData"
 REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$REPO_DIR/lib/retired-entries.sh"
 
 # Colors for output
 RED='\033[0;31m'
@@ -341,6 +342,20 @@ check_claude_agents() {
         print_fail "Claude agents directory not found"
         print_info "Run './install.sh' to create and install agents"
     fi
+    check_retired_entries "claude/agents" "$agents_dir" "agent"
+}
+
+check_retired_entries() {
+    local subdir="$1"
+    local dest="$2"
+    local label="$3"
+    local name
+
+    while read -r name; do
+        [ -e "$dest/$name" ] || continue
+        print_warning "Claude $label deleted from the repo is still installed: $name"
+        print_info "Run './install.sh --only-claude' to remove it"
+    done < <(retired_repo_entries "$REPO_DIR" "$subdir")
 }
 
 # Check Claude skills
@@ -363,6 +378,7 @@ check_claude_skills() {
     done
 
     $tracked || print_info "No Claude skills tracked in the repo"
+    check_retired_entries "claude/skills" "$skills_dir" "skill"
 }
 
 # Check for Xcode installation

@@ -40,19 +40,21 @@ teardown() {
 
 # Replaces the failing brew stub with one that succeeds and logs to $BREW_LOG, which teardown
 # doesn't check. The arguments are the installed formulae as "name version" lines; installed
-# casks go one per line in $BREW_CASKS
+# casks go one per line in $BREW_CASKS, and outdated formulae and casks in $BREW_OUTDATED
 fake_brew() {
     BREW_LOG="$BATS_TEST_TMPDIR/brew.log"
     BREW_CASKS="$BATS_TEST_TMPDIR/brew-casks"
+    BREW_OUTDATED="$BATS_TEST_TMPDIR/brew-outdated"
     local formulae="$BATS_TEST_TMPDIR/brew-formulae"
     printf '%s\n' "$@" > "$formulae"
-    touch "$BREW_LOG" "$BREW_CASKS"
+    touch "$BREW_LOG" "$BREW_CASKS" "$BREW_OUTDATED"
     cat > "$BATS_TEST_TMPDIR/bin/brew" <<EOF
 #!/bin/bash
 echo "brew \$*" >> "$BREW_LOG"
 case "\$1 \$2" in
     "list --formula") cat "$formulae" ;;
     "list --cask") cat "$BREW_CASKS" ;;
+    "outdated --formula" | "outdated --cask") cat "$BREW_OUTDATED" ;;
 esac
 exit 0
 EOF

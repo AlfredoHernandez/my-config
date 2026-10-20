@@ -99,11 +99,35 @@ install_font_by_hand() {
     fake_brew
     install_font_by_hand
     echo "$FONT_CASK" > "$BREW_CASKS"
+    echo "$FONT_CASK" > "$BREW_OUTDATED"
 
     run_script "$REPO_DIR/update.sh" --font
 
     [ "$status" -eq 0 ]
     grep -qxF "brew upgrade --cask $FONT_CASK" "$BREW_LOG"
+}
+
+@test "update upgrades an outdated Brewfile package" {
+    fake_brew "jq 1.8.1" "eza 0.23.0" "swiftformat 0.58.0" "herdr 0.9.5"
+    echo eza > "$BREW_OUTDATED"
+
+    run_script "$REPO_DIR/update.sh" --tools
+
+    [ "$status" -eq 0 ]
+    grep -q "Upgrading from the Brewfile: eza" <<< "$output"
+    grep -qxF "brew $BREWFILE_INSTALL --upgrade" "$BREW_LOG"
+}
+
+@test "update changes nothing and counts nothing when the packages and font are current" {
+    fake_brew "jq 1.8.1" "eza 0.23.0" "swiftformat 0.58.0" "herdr 0.9.5"
+    install_font_by_hand
+    echo "$FONT_CASK" > "$BREW_CASKS"
+
+    run_script "$REPO_DIR/update.sh" --tools --font
+
+    [ "$status" -eq 0 ]
+    grep -qE "Updated: +0" <<< "$output"
+    refute_brew_called "bundle|upgrade"
 }
 
 @test "update leaves a font installed by hand alone" {

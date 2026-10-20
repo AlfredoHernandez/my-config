@@ -58,6 +58,7 @@ push_update_with_marker() {
 
     run_script "$REPO_DIR/update.sh" --config
 
+    [ "$status" -eq 1 ]
     grep -q "Could not update CLAUDE.md" <<< "$output"
     refute_output_matches "Update completed successfully"
     refute_output_matches "Error: Command failed"

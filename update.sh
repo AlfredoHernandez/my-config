@@ -180,7 +180,7 @@ update_tools() {
         print_status "Checking for outdated packages..."
         local installed outdated formula version
         installed="$(installed_formulae)"
-        outdated="$(brew outdated --formula --quiet 2>/dev/null)" || true
+        outdated="$(outdated_brewfile_formulae "$brewfile")"
         for formula in $(brewfile_formulae "$brewfile"); do
             version="$(formula_version "$installed" "$formula")"
             if [[ -z "$version" ]]; then
@@ -197,12 +197,26 @@ update_tools() {
     print_status "Updating Homebrew..."
     brew update --quiet || print_warning "brew update failed: upgrading with the current formulae"
 
-    # Also installs the packages missing here, such as ones added to the Brewfile on another Mac
+    # Missing packages count too, such as ones added to the Brewfile on another Mac
+    local pending
+    pending="$( { missing_brewfile_formulae "$brewfile"; outdated_brewfile_formulae "$brewfile"; } | paste -sd ' ' -)"
+    if [[ -z "$pending" ]]; then
+        print_skip "Brewfile packages already up to date"
+        return 0
+    fi
+
+    print_status "Upgrading from the Brewfile: $pending"
     if brew bundle install --file="$brewfile" --upgrade; then
-        print_updated "Brewfile packages installed and up to date"
+        print_updated "Brewfile packages updated: $pending"
     else
         print_fail "brew bundle failed: run 'brew bundle install --file=$brewfile' to see why"
     fi
+}
+
+outdated_brewfile_formulae() {
+    local outdated
+    outdated="$(brew outdated --formula --quiet 2>/dev/null)" || true
+    brewfile_formulae "$1" | grep -xF -f <(printf '%s\n' "$outdated") || true
 }
 
 # Update configuration files with the same steps install.sh runs
@@ -223,16 +237,14 @@ update_font() {
     print_header "Nerd Font"
 
     if nerd_font_cask_installed; then
-        if ! $CHECK_ONLY; then
-            if brew upgrade --cask "$NERD_FONT_CASK"; then
-                print_updated "JetBrains Mono Nerd Font up to date"
-            else
-                print_fail "Could not upgrade the $NERD_FONT_CASK cask"
-            fi
-        elif brew outdated --cask --quiet 2>/dev/null | grep -qxF "$NERD_FONT_CASK"; then
+        if ! brew outdated --cask --quiet 2>/dev/null | grep -qxF "$NERD_FONT_CASK"; then
+            print_skip "JetBrains Mono Nerd Font already up to date"
+        elif $CHECK_ONLY; then
             print_check "JetBrains Mono Nerd Font is outdated"
+        elif brew upgrade --cask "$NERD_FONT_CASK"; then
+            print_updated "JetBrains Mono Nerd Font upgraded"
         else
-            print_info "JetBrains Mono Nerd Font is up to date"
+            print_fail "Could not upgrade the $NERD_FONT_CASK cask"
         fi
         return 0
     fi
@@ -306,3 +318,7 @@ if $UPDATE_ALL || $UPDATE_FONT; then
 fi
 
 print_summary
+
+if [[ $FAILED -gt 0 ]]; then
+    exit 1
+fi

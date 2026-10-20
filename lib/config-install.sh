@@ -1,7 +1,7 @@
 #!/bin/bash
 # Copies the repo's configuration to the system. Shared by install.sh and update.sh so both
-# apply exactly the same files. Callers must define REPO_DIR, XC_DIR, XC_USER_DATA, DRY_RUN
-# (true/false), print_header, print_info, and these reporters:
+# apply exactly the same files. Callers must source lib/common.sh and define REPO_DIR,
+# DRY_RUN (true/false) and these reporters:
 #   report_unchanged  already matches the repo
 #   report_changed    installed, updated or removed
 #   report_planned    what DRY_RUN would change

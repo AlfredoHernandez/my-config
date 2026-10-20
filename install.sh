@@ -2,6 +2,7 @@
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$REPO_DIR/lib/common.sh"
 source "$REPO_DIR/lib/claude-settings.sh"
 source "$REPO_DIR/lib/retired-entries.sh"
 source "$REPO_DIR/lib/config-install.sh"
@@ -9,10 +10,6 @@ cd "$REPO_DIR"
 
 # Error handler - shows where the error occurred
 trap 'echo "Error: Command failed at line $LINENO. Exit code: $?" >&2' ERR
-
-USER="$(whoami)"
-XC_DIR="/Users/$USER/Library/Developer/Xcode"
-XC_USER_DATA="$XC_DIR/UserData"
 
 # Configuration
 NERD_FONT_VERSION="v3.4.0"
@@ -276,35 +273,9 @@ should_install() {
     return 1
 }
 
-# Colors for better output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-PURPLE='\033[0;35m'
-CYAN='\033[0;36m'
-WHITE='\033[1;37m'
-NC='\033[0m' # No Color
-
 # Function to print colored output
-print_status() {
-    echo -e "${BLUE}[*]${NC} $1"
-}
-
 print_success() {
     echo -e "${GREEN}[✓]${NC} $1"
-}
-
-print_warning() {
-    echo -e "${YELLOW}[!]${NC} $1"
-}
-
-print_info() {
-    echo -e "${CYAN}[i]${NC} $1"
-}
-
-print_header() {
-    echo -e "\n${WHITE}=== $1 ===${NC}"
 }
 
 print_dry_run() {
@@ -345,10 +316,10 @@ validate_prerequisites() {
     if [[ "$(uname)" == "Darwin" ]]; then
         local macos_version=$(sw_vers -productVersion)
         print_pass "macOS detected (version $macos_version)"
-        ((passed++))
+        passed=$((passed + 1))
     else
         print_fail "macOS required (detected: $(uname))"
-        ((failed++))
+        failed=$((failed + 1))
     fi
 
     # Check architecture
@@ -358,41 +329,41 @@ validate_prerequisites() {
     else
         print_pass "Intel Mac detected"
     fi
-    ((passed++))
+    passed=$((passed + 1))
 
     # Check Xcode Command Line Tools
     print_header "Development Tools"
     if xcode-select -p &>/dev/null; then
         print_pass "Xcode Command Line Tools installed"
-        ((passed++))
+        passed=$((passed + 1))
     else
         print_fail "Xcode Command Line Tools not installed"
         print_info "  Install with: xcode-select --install"
-        ((failed++))
+        failed=$((failed + 1))
     fi
 
     # Check Git
     if command -v git &>/dev/null; then
         local git_version=$(git --version | awk '{print $3}')
         print_pass "Git installed (version $git_version)"
-        ((passed++))
+        passed=$((passed + 1))
     else
         print_fail "Git not installed"
-        ((failed++))
+        failed=$((failed + 1))
     fi
 
     # Check curl
     if command -v curl &>/dev/null; then
         print_pass "curl installed"
-        ((passed++))
+        passed=$((passed + 1))
     else
         print_fail "curl not installed (required for downloads)"
-        ((failed++))
+        failed=$((failed + 1))
     fi
 
     if command -v jq &>/dev/null; then
         print_pass "jq installed"
-        ((passed++))
+        passed=$((passed + 1))
     else
         print_warning "jq not installed: the Claude settings merge will be skipped"
         print_info "  Install with: brew install jq"
@@ -402,11 +373,11 @@ validate_prerequisites() {
     print_header "Network"
     if curl -s --head --connect-timeout 5 https://github.com &>/dev/null; then
         print_pass "Network connectivity OK (github.com reachable)"
-        ((passed++))
+        passed=$((passed + 1))
     else
         print_fail "Cannot reach github.com"
         print_info "  Check your internet connection"
-        ((failed++))
+        failed=$((failed + 1))
     fi
 
     # Check disk space
@@ -414,28 +385,28 @@ validate_prerequisites() {
     local available_space=$(df -g "$HOME" | awk 'NR==2 {print $4}')
     if [[ "$available_space" -ge 1 ]]; then
         print_pass "Sufficient disk space (${available_space}GB available)"
-        ((passed++))
+        passed=$((passed + 1))
     else
         print_fail "Low disk space (${available_space}GB available, need at least 1GB)"
-        ((failed++))
+        failed=$((failed + 1))
     fi
 
     # Check write permissions
     print_header "Permissions"
     if [[ -w "$HOME" ]]; then
         print_pass "Home directory writable"
-        ((passed++))
+        passed=$((passed + 1))
     else
         print_fail "Cannot write to home directory"
-        ((failed++))
+        failed=$((failed + 1))
     fi
 
     if [[ -w "$HOME/Library/Fonts" ]] || { $DRY_RUN && [[ -w "$HOME" ]]; } || mkdir -p "$HOME/Library/Fonts" 2>/dev/null; then
         print_pass "Fonts directory accessible"
-        ((passed++))
+        passed=$((passed + 1))
     else
         print_fail "Cannot access fonts directory"
-        ((failed++))
+        failed=$((failed + 1))
     fi
 
     # Check shell
@@ -443,13 +414,13 @@ validate_prerequisites() {
     local current_shell=$(basename "$SHELL")
     if [[ "$current_shell" == "zsh" ]]; then
         print_pass "Using zsh (recommended)"
-        ((passed++))
+        passed=$((passed + 1))
     elif [[ "$current_shell" == "bash" ]]; then
         print_warning "Using bash (zsh recommended for aliases)"
-        ((passed++))
+        passed=$((passed + 1))
     else
         print_info "Using $current_shell"
-        ((passed++))
+        passed=$((passed + 1))
     fi
 
     # Summary
@@ -497,11 +468,6 @@ print_banner() {
     echo "║                                                              ║"
     echo "╚══════════════════════════════════════════════════════════════╝"
     echo -e "${NC}"
-}
-
-# Function to check if a command exists
-command_exists() {
-    command -v "$1" >/dev/null 2>&1
 }
 
 # Function to install Homebrew if not present

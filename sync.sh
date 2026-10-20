@@ -1,21 +1,10 @@
 #!/bin/bash
 set -uo pipefail
 
-source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/claude-settings.sh"
-source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/retired-entries.sh"
-
-USER="$(whoami)"
-XC_DIR="/Users/$USER/Library/Developer/Xcode"
-XC_USER_DATA="$XC_DIR/UserData"
-REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
-
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-CYAN='\033[0;36m'
-WHITE='\033[1;37m'
-NC='\033[0m'
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$REPO_DIR/lib/common.sh"
+source "$REPO_DIR/lib/claude-settings.sh"
+source "$REPO_DIR/lib/retired-entries.sh"
 
 # Counters
 UPDATED=0
@@ -26,27 +15,23 @@ CHANGES=()
 
 print_updated() {
     echo -e "${GREEN}[↑]${NC} $1"
-    ((UPDATED++))
+    UPDATED=$((UPDATED + 1))
     CHANGES+=("$1")
 }
 
 print_ok() {
     echo -e "${CYAN}[✓]${NC} $1"
-    ((UP_TO_DATE++))
+    UP_TO_DATE=$((UP_TO_DATE + 1))
 }
 
 print_missing() {
     echo -e "${YELLOW}[−]${NC} $1"
-    ((MISSING++))
+    MISSING=$((MISSING + 1))
 }
 
 print_skipped() {
     echo -e "${RED}[!]${NC} $1"
-    ((SKIPPED++))
-}
-
-print_status() {
-    echo -e "${CYAN}[*]${NC} $1"
+    SKIPPED=$((SKIPPED + 1))
 }
 
 # Compare and sync a single file

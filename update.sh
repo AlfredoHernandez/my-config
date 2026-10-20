@@ -1,24 +1,18 @@
 #!/bin/bash
 set -uo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$SCRIPT_DIR"
+source "$REPO_DIR/lib/common.sh"
+source "$REPO_DIR/lib/claude-settings.sh"
+source "$REPO_DIR/lib/retired-entries.sh"
+source "$REPO_DIR/lib/config-install.sh"
+
 # Error handler
 trap 'echo "Error: Command failed at line $LINENO. Exit code: $?" >&2' ERR
 
-USER="$(whoami)"
-XC_DIR="/Users/$USER/Library/Developer/Xcode"
-XC_USER_DATA="$XC_DIR/UserData"
-
 # Configuration
 NERD_FONT_VERSION="v3.4.0"
-
-# Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-WHITE='\033[1;37m'
-NC='\033[0m'
 
 # Flags
 CHECK_ONLY=false
@@ -36,14 +30,10 @@ UPDATED=0
 SKIPPED=0
 FAILED=0
 
-print_status() { echo -e "${BLUE}[*]${NC} $1"; }
 print_success() { echo -e "${GREEN}[✓]${NC} $1"; UPDATED=$((UPDATED + 1)); }
 print_skip() { echo -e "${YELLOW}[−]${NC} $1"; SKIPPED=$((SKIPPED + 1)); }
 print_fail() { echo -e "${RED}[✗]${NC} $1"; FAILED=$((FAILED + 1)); }
-print_info() { echo -e "${CYAN}[i]${NC} $1"; }
-print_header() { echo -e "\n${WHITE}=== $1 ===${NC}"; }
 print_check() { echo -e "${CYAN}[CHECK]${NC} $1"; }
-print_warning() { echo -e "${YELLOW}[!]${NC} $1"; }
 
 report_unchanged() { SKIPPED=$((SKIPPED + 1)); }
 report_changed() { print_success "$1"; }
@@ -114,17 +104,6 @@ done
 # Set only by the restart below; cleared so the processes this run starts don't inherit it
 RESTARTED_FROM="${MY_CONFIG_UPDATE_RESTARTED_FROM:-}"
 unset MY_CONFIG_UPDATE_RESTARTED_FROM
-
-command_exists() {
-    command -v "$1" >/dev/null 2>&1
-}
-
-# Get script directory
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_DIR="$SCRIPT_DIR"
-source "$REPO_DIR/lib/claude-settings.sh"
-source "$REPO_DIR/lib/retired-entries.sh"
-source "$REPO_DIR/lib/config-install.sh"
 
 # Update repository
 update_repo() {

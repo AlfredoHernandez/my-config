@@ -1,19 +1,8 @@
 #!/bin/bash
 set -uo pipefail
 
-USER="$(whoami)"
-XC_DIR="/Users/$USER/Library/Developer/Xcode"
-REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
-XC_USER_DATA="$XC_DIR/UserData"
-
-# Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-WHITE='\033[1;37m'
-NC='\033[0m'
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$REPO_DIR/lib/common.sh"
 
 # Flags
 DRY_RUN=false
@@ -32,14 +21,10 @@ REMOVED=0
 SKIPPED=0
 FAILED=0
 
-print_status() { echo -e "${BLUE}[*]${NC} $1"; }
-print_success() { echo -e "${GREEN}[✓]${NC} $1"; ((REMOVED++)); }
-print_skip() { echo -e "${YELLOW}[−]${NC} $1"; ((SKIPPED++)); }
-print_fail() { echo -e "${RED}[✗]${NC} $1"; ((FAILED++)); }
-print_info() { echo -e "${CYAN}[i]${NC} $1"; }
-print_header() { echo -e "\n${WHITE}=== $1 ===${NC}"; }
+print_success() { echo -e "${GREEN}[✓]${NC} $1"; REMOVED=$((REMOVED + 1)); }
+print_skip() { echo -e "${YELLOW}[−]${NC} $1"; SKIPPED=$((SKIPPED + 1)); }
+print_fail() { echo -e "${RED}[✗]${NC} $1"; FAILED=$((FAILED + 1)); }
 print_dry_run() { echo -e "${YELLOW}[DRY-RUN]${NC} Would remove: $1"; }
-print_warning() { echo -e "${YELLOW}[!]${NC} $1"; }
 
 show_help() {
     echo "Usage: ./uninstall.sh [OPTIONS]"
@@ -133,10 +118,6 @@ confirm() {
         [yY][eE][sS]|[yY]) return 0 ;;
         *) return 1 ;;
     esac
-}
-
-command_exists() {
-    command -v "$1" >/dev/null 2>&1
 }
 
 # Remove Homebrew packages

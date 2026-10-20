@@ -717,6 +717,10 @@ install_claude_agents() {
 # Function to install Claude skills
 install_claude_skills() {
     print_header "Claude Skills Installation"
+    if [[ ! -d "claude/skills" ]]; then
+        print_info "No skills in this repo"
+        return 0
+    fi
     install_or_update_dir "claude/skills" "$HOME/.claude/skills" "Skill"
 }
 

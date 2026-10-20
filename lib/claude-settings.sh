@@ -55,10 +55,11 @@ claude_settings_merge_owned() {
 # Prints the lines of the installed shared values that a merge replaces with the repo's values
 claude_settings_replaced_values() {
     local installed="$1" repo="$2"
-    # Trailing commas are dropped so a value that only moved within a list isn't reported
-    { diff <(claude_settings_owned_subset "$installed" "$repo" | jq -S . | sed 's/,$//') \
-           <(claude_settings_owned_subset "$repo" "$repo" | jq -S . | sed 's/,$//') || true; } |
-        sed -n 's/^< *//p'
+    # Compared as sets of lines without trailing commas, so a value that only moved within a list
+    # isn't reported
+    { grep -vxF -f <(claude_settings_owned_subset "$repo" "$repo" | jq -S . | sed 's/,$//') \
+          <(claude_settings_owned_subset "$installed" "$repo" | jq -S . | sed 's/,$//') || true; } |
+        sed 's/^ *//'
 }
 
 claude_settings_equal() {

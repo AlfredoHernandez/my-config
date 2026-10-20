@@ -1,5 +1,5 @@
 #!/bin/bash
-# Shared by install.sh and sync.sh. The repo owns only these keys of
+# Shared by install.sh, update.sh and sync.sh. The repo owns only these keys of
 # ~/.claude/settings.json; everything else (hooks, autoMode.soft_deny, preferences) stays machine-local.
 # autoMode is shared through user settings because the classifier ignores it in project settings.
 CLAUDE_SETTINGS_OWNED_PATHS='[
@@ -50,6 +50,15 @@ claude_settings_merge_owned() {
             ($owner | getpath($path)) as $value
             | if $value == null then . else setpath($path; (getpath($path) // {}) + $value) end)
     ' "$base" "$owner"
+}
+
+# Prints the lines of the installed shared values that a merge replaces with the repo's values
+claude_settings_replaced_values() {
+    local installed="$1" repo="$2"
+    # Trailing commas are dropped so a value that only moved within a list isn't reported
+    { diff <(claude_settings_owned_subset "$installed" "$repo" | jq -S . | sed 's/,$//') \
+           <(claude_settings_owned_subset "$repo" "$repo" | jq -S . | sed 's/,$//') || true; } |
+        sed -n 's/^< *//p'
 }
 
 claude_settings_equal() {

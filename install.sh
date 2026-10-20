@@ -327,6 +327,7 @@ report_unchanged() { print_success "$1"; }
 report_changed() { print_updated "$1"; }
 report_planned() { print_dry_run "$1"; }
 report_warning() { print_warning "$1"; }
+report_failure() { print_fail "$1"; }
 
 # Validate system prerequisites
 validate_prerequisites() {

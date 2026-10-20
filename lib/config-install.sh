@@ -5,7 +5,9 @@
 #   report_unchanged  already matches the repo
 #   report_changed    installed, updated or removed
 #   report_planned    what DRY_RUN would change
-#   report_warning    a step that was skipped
+#   report_warning    a step that was skipped on purpose
+#   report_failure    a step that failed; the function then returns 1
+# Every write is checked because update.sh runs without set -e.
 # Requires lib/claude-settings.sh and lib/retired-entries.sh.
 
 install_or_update_file() {
@@ -14,7 +16,7 @@ install_or_update_file() {
     local label="$3"
 
     if [[ ! -f "$src" ]]; then
-        report_warning "$label source not found: $src"
+        report_failure "$label source not found: $src"
         return 1
     fi
 
@@ -23,11 +25,16 @@ install_or_update_file() {
     elif $DRY_RUN; then
         [[ -f "$dest" ]] && report_planned "Update $label" || report_planned "Install $label"
     elif [[ -f "$dest" ]]; then
-        cp "$src" "$dest"
+        if ! cp "$src" "$dest"; then
+            report_failure "Could not update $label"
+            return 1
+        fi
         report_changed "$label updated"
     else
-        mkdir -p "$(dirname "$dest")"
-        cp "$src" "$dest"
+        if ! { mkdir -p "$(dirname "$dest")" && cp "$src" "$dest"; }; then
+            report_failure "Could not install $label"
+            return 1
+        fi
         report_changed "$label installed"
     fi
 }
@@ -38,7 +45,7 @@ install_or_update_dir() {
     local label="$3"
 
     if [[ ! -d "$src" ]]; then
-        report_warning "$label source not found: $src"
+        report_failure "$label source not found: $src"
         return 1
     fi
 
@@ -64,9 +71,10 @@ remove_retired_entries() {
         [[ -e "$dest/$name" ]] || continue
         if $DRY_RUN; then
             report_planned "Remove $label deleted from the repo: $name"
-        else
-            rm -rf "${dest:?}/${name:?}"
+        elif rm -rf "${dest:?}/${name:?}"; then
             report_changed "Removed $label deleted from the repo: $name"
+        else
+            report_failure "Could not remove $label deleted from the repo: $name"
         fi
     done < <(retired_repo_entries "$REPO_DIR" "$subdir")
 }
@@ -101,24 +109,51 @@ install_claude_settings() {
         return
     fi
 
+    # Created next to the destination so the final mv is an atomic replace
     local merged
-    merged="$(mktemp)"
+    merged="$(mktemp "$dest.XXXXXX")"
     if ! claude_settings_merge_owned "$dest" "$src" > "$merged"; then
-        report_warning "Claude settings merge failed: skipping"
+        report_failure "Claude settings merge failed"
         rm -f "$merged"
-        return
+        return 1
     fi
 
     if claude_settings_equal "$merged" "$dest"; then
         report_unchanged "Claude settings already up to date"
-    elif $DRY_RUN; then
-        report_planned "Merge shared keys into Claude settings (local keys are kept)"
-    else
-        cp "$dest" "$dest.bak"
-        cp "$merged" "$dest"
-        report_changed "Claude settings merged (backup: $dest.bak)"
+        rm -f "$merged"
+        return
     fi
-    rm -f "$merged"
+
+    local replaced
+    replaced="$(claude_settings_replaced_values "$dest" "$src")"
+    if $DRY_RUN; then
+        report_planned "Merge shared keys into Claude settings (local keys are kept)"
+        print_replaced_settings "$replaced" "would be replaced"
+        rm -f "$merged"
+        return
+    fi
+
+    if ! cp "$dest" "$dest.bak"; then
+        report_failure "Could not back up $dest: skipping Claude settings merge"
+        rm -f "$merged"
+        return 1
+    fi
+    if ! mv "$merged" "$dest"; then
+        report_failure "Could not write $dest"
+        rm -f "$merged"
+        return 1
+    fi
+    report_changed "Claude settings merged (backup: $dest.bak)"
+    print_replaced_settings "$replaced" "replaced, kept in the backup"
+}
+
+print_replaced_settings() {
+    local replaced="$1"
+    local outcome="$2"
+
+    [[ -n "$replaced" ]] || return 0
+    print_info "Local values of shared keys $outcome:"
+    sed 's/^/      /' <<< "$replaced"
 }
 
 install_claude_agents() {
@@ -148,10 +183,10 @@ install_claude_skills() {
             report_unchanged "Skill: $name already up to date"
         elif $DRY_RUN; then
             report_planned "Sync skill: $name"
-        else
-            mkdir -p "$dest"
-            rsync -a --delete --exclude __pycache__ --exclude .DS_Store "$skill" "$dest/$name/"
+        elif mkdir -p "$dest" && rsync -a --delete --exclude __pycache__ --exclude .DS_Store "$skill" "$dest/$name/"; then
             report_changed "Skill: $name synced"
+        else
+            report_failure "Could not sync skill: $name"
         fi
     done
 }

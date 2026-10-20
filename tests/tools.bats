@@ -147,3 +147,14 @@ install_font_by_hand() {
     [ "$status" -eq 0 ]
     grep -qxF "brew uninstall --cask $FONT_CASK" "$BREW_LOG"
 }
+
+@test "install ends with an error when a step fails" {
+    fake_brew
+    sed -i '' 's/^exit 0$/exit 1/' "$BATS_TEST_TMPDIR/bin/brew"
+
+    run_script "$REPO_DIR/install.sh" --only-font --no-verify
+
+    [ "$status" -eq 1 ]
+    grep -q "1 step(s) failed" <<< "$output"
+    refute_output_matches "installed successfully"
+}

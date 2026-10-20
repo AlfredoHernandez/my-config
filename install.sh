@@ -644,6 +644,9 @@ if $DRY_RUN; then
     echo -e "\n${CYAN}📋 What would be installed:${NC}"
     print_selected_components "${YELLOW}○${NC}"
     echo -e "\n${GREEN}Run without --dry-run to install:${NC} ${WHITE}./install.sh${NC}"
+elif [[ $FAILED -gt 0 ]]; then
+    print_header "Installation Finished With Errors"
+    echo -e "${RED}$FAILED step(s) failed: see the [✗] lines above${NC}"
 else
     print_header "Installation Complete!"
     print_success "Selected components installed successfully!"
@@ -665,4 +668,8 @@ if ! $DRY_RUN && $VERIFY; then
     else
         echo -e "${YELLOW}health-check.sh not found, skipping verification${NC}"
     fi
+fi
+
+if [[ $FAILED -gt 0 ]]; then
+    exit 1
 fi

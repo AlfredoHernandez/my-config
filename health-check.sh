@@ -1,20 +1,8 @@
 #!/bin/bash
 
-USER="$(whoami)"
-XC_DIR="/Users/$USER/Library/Developer/Xcode"
-XC_USER_DATA="$XC_DIR/UserData"
 REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$REPO_DIR/lib/common.sh"
 source "$REPO_DIR/lib/retired-entries.sh"
-
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-PURPLE='\033[0;35m'
-CYAN='\033[0;36m'
-WHITE='\033[1;37m'
-NC='\033[0m' # No Color
 
 # Counters
 PASSED=0
@@ -24,25 +12,17 @@ WARNINGS=0
 # Function to print colored output
 print_pass() {
     echo -e "${GREEN}[✓]${NC} $1"
-    ((PASSED++))
+    PASSED=$((PASSED + 1))
 }
 
 print_fail() {
     echo -e "${RED}[✗]${NC} $1"
-    ((FAILED++))
+    FAILED=$((FAILED + 1))
 }
 
 print_warning() {
     echo -e "${YELLOW}[!]${NC} $1"
-    ((WARNINGS++))
-}
-
-print_info() {
-    echo -e "${CYAN}[i]${NC} $1"
-}
-
-print_header() {
-    echo -e "\n${WHITE}=== $1 ===${NC}"
+    WARNINGS=$((WARNINGS + 1))
 }
 
 print_banner() {
@@ -55,11 +35,6 @@ print_banner() {
     echo "║                                                              ║"
     echo "╚══════════════════════════════════════════════════════════════╝"
     echo -e "${NC}"
-}
-
-# Function to check if command exists
-command_exists() {
-    command -v "$1" >/dev/null 2>&1
 }
 
 # Function to get version of a command

@@ -31,7 +31,7 @@ This repository contains my personal development configuration that I use across
 
 ### 🤖 Claude Code Integration
 - **Global Configuration** - Custom instructions for Claude Code in `~/.claude/CLAUDE.md`
-- **Settings** - Shared permissions, attribution, plugins, the `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` env var, the auto mode trust context and allow rules (`autoMode.environment`, `autoMode.allow`), and the unattended-work options (`autoContinueAtUsageLimit`, `inputNeededNotifEnabled`, `askUserQuestionTimeout`). `install.sh` merges only these keys into `~/.claude/settings.json` (backup in `settings.json.bak`) and keeps local keys such as hooks and preferences; `sync.sh` copies only these keys back. For plugins and marketplaces the repo owns only the entries it lists, so a plugin enabled on one machine is kept there and is not copied back. The merge needs [jq](https://formulae.brew.sh/formula/jq) (`brew install jq`); without it the merge is skipped
+- **Settings** - Shared permissions, attribution, plugins, the `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` env var, the auto mode trust context and allow rules (`autoMode.environment`, `autoMode.allow`), and the unattended-work options (`autoContinueAtUsageLimit`, `inputNeededNotifEnabled`, `askUserQuestionTimeout`). `install.sh` and `update.sh` merge only these keys into `~/.claude/settings.json` (backup in `settings.json.bak`), keep local keys such as hooks and preferences, and list any local values of these keys that the repo replaces; `sync.sh` copies only these keys back. For plugins and marketplaces the repo owns only the entries it lists, so a plugin enabled on one machine is kept there and is not copied back. The merge needs [jq](https://formulae.brew.sh/formula/jq) (`brew install jq`); without it the merge is skipped
 - **Custom Agents** - Specialized AI assistants for common tasks:
   - `code-review` - Read-only senior code reviewer that reports findings and hand-offs
   - `design-patterns` - GoF design patterns expert
@@ -147,7 +147,7 @@ Installs or updates all components from the repo to your system. If a file alrea
 
 ### `update.sh` - Update
 
-Updates installed components to their latest versions. Fast-forwards `main` from `origin/main` (skipped on any other branch), upgrades eza and SwiftFormat, and applies the repo's configuration with the same steps as `install.sh` (shared in `lib/config-install.sh`): SwiftFormat config, `CLAUDE.md`, Claude agents, skills and settings, custom scripts, Xcode templates, themes and the header template. Missing files are installed too, so every Mac ends up with the same configuration. Aliases are not updated, because they also change `~/.zshrc`; run `install.sh --only-aliases` for those.
+Updates installed components to their latest versions. Fast-forwards `main` from `origin/main` (skipped on any other branch), upgrades eza and SwiftFormat, and applies the repo's configuration with the same steps as `install.sh` (shared in `lib/config-install.sh`): SwiftFormat config, `CLAUDE.md`, Claude agents, skills and settings, custom scripts, Xcode templates, themes and the header template. Missing files are installed too, including components skipped at install time, so every Mac ends up with the same configuration. Aliases are not updated, because they also change `~/.zshrc`; run `install.sh --only-aliases` for those.
 
 ```bash
 ./update.sh            # Update everything

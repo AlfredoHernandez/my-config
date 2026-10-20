@@ -3,6 +3,7 @@ set -uo pipefail
 
 USER="$(whoami)"
 XC_DIR="/Users/$USER/Library/Developer/Xcode"
+REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 XC_USER_DATA="$XC_DIR/UserData"
 
 # Colors
@@ -54,7 +55,7 @@ show_help() {
     echo "  --aliases           Remove shell aliases"
     echo "  --scripts           Remove custom scripts"
     echo "  --xcode             Remove Xcode themes, templates, headers"
-    echo "  --claude            Remove Claude configuration and agents"
+    echo "  --claude            Remove Claude configuration, agents and skills"
     echo "  --help, -h          Show this help message"
     echo ""
     echo "Examples:"
@@ -268,18 +269,21 @@ remove_scripts() {
     print_header "Custom Scripts"
 
     local bin_dir="$HOME/Developer/bin"
-    local script_file="$bin_dir/deeplink.sh"
 
-    if [[ -f "$script_file" ]]; then
-        if $DRY_RUN; then
-            print_dry_run "$script_file"
+    for script in "$REPO_DIR"/scripts/*.sh; do
+        local name
+        name="$(basename "$script")"
+        if [[ -f "$bin_dir/$name" ]]; then
+            if $DRY_RUN; then
+                print_dry_run "$bin_dir/$name"
+            else
+                rm -f "$bin_dir/$name"
+                print_success "Removed $name"
+            fi
         else
-            rm -f "$script_file"
-            print_success "Removed deeplink.sh"
+            print_skip "$name not found"
         fi
-    else
-        print_skip "deeplink.sh not found"
-    fi
+    done
 
     # Remove empty bin directory
     if [[ -d "$bin_dir" ]] && [[ -z "$(ls -A "$bin_dir" 2>/dev/null)" ]]; then
@@ -295,32 +299,8 @@ remove_scripts() {
 remove_xcode() {
     print_header "Xcode Customizations"
 
-    # Themes
-    local themes_dir="$XC_USER_DATA/FontAndColorThemes"
-    if [[ -d "$themes_dir" ]] && ls "$themes_dir"/*.xccolortheme &>/dev/null; then
-        if $DRY_RUN; then
-            local count=$(ls "$themes_dir"/*.xccolortheme 2>/dev/null | wc -l | xargs)
-            print_dry_run "Xcode themes ($count files)"
-        else
-            rm -f "$themes_dir"/*.xccolortheme
-            print_success "Removed Xcode themes"
-        fi
-    else
-        print_skip "No Xcode themes found"
-    fi
-
-    # Templates
-    local templates_dir="$XC_DIR/Templates"
-    if [[ -d "$templates_dir" ]] && [[ -n "$(ls -A "$templates_dir" 2>/dev/null)" ]]; then
-        if $DRY_RUN; then
-            print_dry_run "$templates_dir"
-        else
-            rm -rf "$templates_dir"
-            print_success "Removed Xcode templates"
-        fi
-    else
-        print_skip "No Xcode templates found"
-    fi
+    remove_repo_entries "$REPO_DIR/Themes" "$XC_USER_DATA/FontAndColorThemes" "Xcode theme"
+    remove_repo_entries "$REPO_DIR/Templates" "$XC_DIR/Templates" "Xcode template"
 
     # Header template
     local header_file="$XC_USER_DATA/IDETemplateMacros.plist"
@@ -354,19 +334,33 @@ remove_claude() {
         print_skip "CLAUDE.md not found"
     fi
 
-    # Agents
-    local agents_dir="$claude_dir/agents"
-    if [[ -d "$agents_dir" ]] && [[ -n "$(ls -A "$agents_dir" 2>/dev/null)" ]]; then
+    remove_repo_entries "$REPO_DIR/claude/agents" "$claude_dir/agents" "Claude agent"
+    remove_repo_entries "$REPO_DIR/claude/skills" "$claude_dir/skills" "Claude skill"
+}
+
+# Only entries shipped by this repo are removed, so themes, templates, agents and skills
+# added by the user or other tools are left alone
+remove_repo_entries() {
+    local repo_dir="$1"
+    local installed_dir="$2"
+    local label="$3"
+    local removed=0
+
+    for entry in "$repo_dir"/*; do
+        [[ -e "$entry" ]] || continue
+        local name
+        name="$(basename "$entry")"
+        [[ -e "$installed_dir/$name" ]] || continue
         if $DRY_RUN; then
-            local count=$(ls "$agents_dir"/*.md 2>/dev/null | wc -l | xargs)
-            print_dry_run "Claude agents ($count files)"
+            print_dry_run "$label: $name"
         else
-            rm -rf "$agents_dir"
-            print_success "Removed Claude agents"
+            rm -rf "${installed_dir:?}/$name"
+            print_success "Removed $label: $name"
         fi
-    else
-        print_skip "No Claude agents found"
-    fi
+        removed=$((removed + 1))
+    done
+
+    [[ $removed -gt 0 ]] || print_skip "No ${label}s found"
 }
 
 # Print summary

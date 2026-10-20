@@ -1,6 +1,9 @@
 #!/bin/bash
 set -uo pipefail
 
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/claude-settings.sh"
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/retired-entries.sh"
+
 USER="$(whoami)"
 XC_DIR="/Users/$USER/Library/Developer/Xcode"
 XC_USER_DATA="$XC_DIR/UserData"
@@ -18,6 +21,7 @@ NC='\033[0m'
 UPDATED=0
 UP_TO_DATE=0
 MISSING=0
+SKIPPED=0
 CHANGES=()
 
 print_updated() {
@@ -36,12 +40,17 @@ print_missing() {
     ((MISSING++))
 }
 
+print_skipped() {
+    echo -e "${RED}[!]${NC} $1"
+    ((SKIPPED++))
+}
+
 print_status() {
     echo -e "${CYAN}[*]${NC} $1"
 }
 
 # Compare and sync a single file
-# Returns 0 if updated, 1 if up-to-date, 2 if source missing
+# Returns 0 if updated, 1 if up-to-date, 2 if source missing, 3 if the repo copy is newer
 sync_file() {
     local source="$1"
     local dest="$2"
@@ -60,6 +69,10 @@ sync_file() {
     fi
 
     if ! diff -q "$source" "$dest" &>/dev/null; then
+        if [[ "$dest" -nt "$source" ]]; then
+            print_skipped "$label (repo copy is newer: run ./install.sh first)"
+            return 3
+        fi
         cp "$source" "$dest"
         print_updated "$label"
         return 0
@@ -85,6 +98,7 @@ sync_dir() {
     for file in "$source"/*; do
         local filename
         filename="$(basename "$file")"
+        [[ "$filename" == "__pycache__" ]] && continue
 
         if [[ -d "$file" ]]; then
             sync_dir "$file" "$dest/$filename" "$label/$filename"
@@ -177,23 +191,91 @@ sync_aliases() {
     rm -f "$tmp"
 }
 
+# Copy only the repo-owned keys of the installed settings into the repo file
+sync_claude_settings() {
+    local installed="$HOME/.claude/settings.json"
+    local repo_file="$REPO_DIR/claude/settings.json"
+    local label="Claude: settings.json (shared keys)"
+
+    if [[ ! -f "$installed" ]]; then
+        print_missing "$label (not installed)"
+        return
+    fi
+    if ! command -v jq &>/dev/null; then
+        print_missing "$label (jq not installed)"
+        return
+    fi
+
+    [[ -f "$repo_file" ]] || echo '{}' > "$repo_file"
+    if ! jq empty "$installed" "$repo_file" 2>/dev/null; then
+        print_missing "$label (invalid JSON)"
+        return
+    fi
+
+    local owned merged
+    owned="$(mktemp)"
+    merged="$(mktemp)"
+    if ! claude_settings_owned_subset "$installed" "$repo_file" > "$owned" ||
+       ! claude_settings_merge_owned "$repo_file" "$owned" > "$merged"; then
+        print_missing "$label (merge failed)"
+        rm -f "$owned" "$merged"
+        return
+    fi
+
+    if claude_settings_equal "$merged" "$repo_file"; then
+        print_ok "$label"
+    else
+        cp "$merged" "$repo_file"
+        print_updated "$label"
+    fi
+    rm -f "$owned" "$merged"
+}
+
 # Sync Claude Code configuration
 sync_claude() {
     print_status "Checking Claude Code configuration..."
     sync_file "$HOME/.claude/CLAUDE.md" "$REPO_DIR/claude/CLAUDE.md" "Claude: CLAUDE.md"
-    sync_file "$HOME/.claude/settings.json" "$REPO_DIR/claude/settings.json" "Claude: settings.json"
+    sync_claude_settings
 
     # Sync agents
     local agents_dir="$HOME/.claude/agents"
     if [[ -d "$agents_dir" ]] && [[ -n "$(ls -A "$agents_dir" 2>/dev/null)" ]]; then
+        local retired
+        retired="$(retired_repo_entries "$REPO_DIR" "claude/agents")"
         for agent in "$agents_dir"/*.md; do
             local name
             name="$(basename "$agent")"
+            if grep -qxF "$name" <<< "$retired"; then
+                print_skipped "Claude agent: $name (deleted from the repo: run ./install.sh to remove it)"
+                continue
+            fi
             sync_file "$agent" "$REPO_DIR/claude/agents/$name" "Claude agent: $name"
         done
     else
         print_missing "No Claude agents installed"
     fi
+
+    sync_claude_skills
+}
+
+# Sync only the skills already tracked in the repo, so skills installed by other tools stay out
+sync_claude_skills() {
+    local skills_dir="$HOME/.claude/skills"
+    local tracked=false
+
+    for skill in "$REPO_DIR"/claude/skills/*/; do
+        [[ -d "$skill" ]] || continue
+        local name
+        name="$(basename "$skill")"
+        tracked=true
+        if [[ -f "$skills_dir/$name/SKILL.md" ]]; then
+            sync_dir "$skills_dir/$name" "${skill%/}" "Claude skill: $name"
+        else
+            print_missing "Claude skill: $name (not installed)"
+        fi
+    done
+
+    $tracked || print_ok "No Claude skills tracked in the repo"
 }
 
 # Sync SwiftFormat configuration
@@ -211,13 +293,20 @@ print_summary() {
     echo -e "  ${GREEN}↑ Updated:${NC}    $UPDATED"
     echo -e "  ${CYAN}✓ Up to date:${NC} $UP_TO_DATE"
     echo -e "  ${YELLOW}− Missing:${NC}    $MISSING"
+    echo -e "  ${RED}! Skipped:${NC}    $SKIPPED"
     echo -e "${WHITE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo ""
 
-    if [[ $UPDATED -gt 0 ]]; then
-        echo -e "${GREEN}Configuration updated!${NC} Run the following to save your changes:"
+    if [[ $SKIPPED -gt 0 ]]; then
+        echo -e "${RED}Some files were skipped because this Mac is behind the repo.${NC}"
+        echo -e "Run ${WHITE}./install.sh${NC} to bring it in sync, then sync again."
         echo ""
-        echo -e "  ${WHITE}git add -A && git commit -m \"Update configuration backup\" && git push${NC}"
+    fi
+
+    if [[ $UPDATED -gt 0 ]]; then
+        echo -e "${GREEN}Configuration updated!${NC} Review the changes, then stage and commit them by path:"
+        echo ""
+        echo -e "  ${WHITE}git status && git diff${NC}"
         echo ""
     else
         echo -e "${CYAN}Everything is up to date. No changes needed.${NC}"

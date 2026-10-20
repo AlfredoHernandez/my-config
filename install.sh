@@ -1,6 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$REPO_DIR/lib/claude-settings.sh"
+source "$REPO_DIR/lib/retired-entries.sh"
+cd "$REPO_DIR"
+
 # Error handler - shows where the error occurred
 trap 'echo "Error: Command failed at line $LINENO. Exit code: $?" >&2' ERR
 
@@ -63,7 +68,7 @@ show_help() {
     echo "  --only-themes              Install only Xcode color themes"
     echo "  --only-templates           Install only Xcode templates"
     echo "  --only-header              Install only Xcode header template"
-    echo "  --only-claude              Install only Claude Code configuration and agents"
+    echo "  --only-claude              Install only Claude Code configuration, agents and skills"
     echo ""
     echo "Skip Specific Components (installs everything except specified):"
     echo "  --skip-homebrew            Skip Homebrew installation"
@@ -108,7 +113,7 @@ list_components() {
     echo "  • header               - Header template"
     echo ""
     echo "Claude Code:"
-    echo "  • claude               - Configuration and custom agents"
+    echo "  • claude               - Configuration, custom agents and skills"
     echo ""
 }
 
@@ -434,6 +439,14 @@ validate_prerequisites() {
         ((failed++))
     fi
 
+    if command -v jq &>/dev/null; then
+        print_pass "jq installed"
+        ((passed++))
+    else
+        print_warning "jq not installed: the Claude settings merge will be skipped"
+        print_info "  Install with: brew install jq"
+    fi
+
     # Check network connectivity
     print_header "Network"
     if curl -s --head --connect-timeout 5 https://github.com &>/dev/null; then
@@ -526,7 +539,7 @@ print_banner() {
     echo "║    • eza (modern ls replacement)                            ║"
     echo "║    • SwiftFormat (Swift code formatter)                     ║"
     echo "║    • JetBrains Mono Nerd Font                               ║"
-    echo "║    • Claude Code configuration and agents                    ║"
+    echo "║    • Claude Code configuration, agents and skills           ║"
     echo "║    • Custom shell aliases                                   ║"
     echo "║    • Xcode themes and templates                             ║"
     echo "║    • Development scripts                                    ║"
@@ -677,13 +690,77 @@ install_claude_config() {
 # Function to install Claude Code settings
 install_claude_settings() {
     print_header "Claude Code Settings"
-    install_or_update_file "claude/settings.json" "$HOME/.claude/settings.json" "Claude settings"
+    local src="claude/settings.json"
+    local dest="$HOME/.claude/settings.json"
+
+    if [[ ! -f "$dest" ]]; then
+        install_or_update_file "$src" "$dest" "Claude settings"
+        return
+    fi
+
+    if ! command -v jq &>/dev/null; then
+        print_warning "jq not found: skipping Claude settings merge (brew install jq)"
+        return
+    fi
+
+    if ! jq empty "$dest" "$src" 2>/dev/null; then
+        print_warning "Invalid JSON in Claude settings: skipping merge (fix $dest)"
+        return
+    fi
+
+    local merged
+    merged="$(mktemp)"
+    if ! claude_settings_merge_owned "$dest" "$src" > "$merged"; then
+        print_warning "Claude settings merge failed: skipping"
+        rm -f "$merged"
+        return
+    fi
+
+    if claude_settings_equal "$merged" "$dest"; then
+        print_success "Claude settings already up to date"
+    elif $DRY_RUN; then
+        print_dry_run "Merge shared keys into Claude settings (local keys are kept)"
+    else
+        cp "$dest" "$dest.bak"
+        cp "$merged" "$dest"
+        print_updated "Claude settings merged (backup: $dest.bak)"
+    fi
+    rm -f "$merged"
 }
 
 # Function to install Claude agents
 install_claude_agents() {
     print_header "Claude Agents Installation"
     install_or_update_dir "claude/agents" "$HOME/.claude/agents" "Agent"
+    remove_retired_entries "claude/agents" "$HOME/.claude/agents" "Agent"
+}
+
+remove_retired_entries() {
+    local subdir="$1"
+    local dest="$2"
+    local label="$3"
+    local name
+
+    while read -r name; do
+        [[ -e "$dest/$name" ]] || continue
+        if $DRY_RUN; then
+            print_dry_run "Remove $label deleted from the repo: $name"
+        else
+            rm -rf "${dest:?}/${name:?}"
+            print_updated "Removed $label deleted from the repo: $name"
+        fi
+    done < <(retired_repo_entries "$REPO_DIR" "$subdir")
+}
+
+# Function to install Claude skills
+install_claude_skills() {
+    print_header "Claude Skills Installation"
+    remove_retired_entries "claude/skills" "$HOME/.claude/skills" "Skill"
+    if [[ ! -d "claude/skills" ]]; then
+        print_info "No skills in this repo"
+        return 0
+    fi
+    install_or_update_dir "claude/skills" "$HOME/.claude/skills" "Skill"
 }
 
 # Function to install custom scripts
@@ -763,6 +840,11 @@ if should_install "claude" "$INSTALL_CLAUDE" "$SKIP_CLAUDE"; then
     install_claude_agents
 fi
 
+# Install Claude skills
+if should_install "claude" "$INSTALL_CLAUDE" "$SKIP_CLAUDE"; then
+    install_claude_skills
+fi
+
 # Install Claude Code settings
 if should_install "claude" "$INSTALL_CLAUDE" "$SKIP_CLAUDE"; then
     install_claude_settings
@@ -802,43 +884,60 @@ if should_install "header" "$INSTALL_HEADER" "$SKIP_HEADER"; then
     install_or_update_file "Headers/IDETemplateMacros.plist" "$XC_USER_DATA/IDETemplateMacros.plist" "Header template"
 fi
 
+print_selected_components() {
+    local marker="$1"
+    should_install "homebrew" "$INSTALL_HOMEBREW" "$SKIP_HOMEBREW" && echo -e "  $marker Homebrew package manager"
+    should_install "tools" "$INSTALL_TOOLS" "$SKIP_TOOLS" && echo -e "  $marker eza and SwiftFormat"
+    should_install "font" "$INSTALL_FONT" "$SKIP_FONT" && echo -e "  $marker JetBrains Mono Nerd Font"
+    should_install "swiftformat-config" "$INSTALL_SWIFTFORMAT_CONFIG" "$SKIP_SWIFTFORMAT_CONFIG" && echo -e "  $marker SwiftFormat configuration"
+    should_install "claude" "$INSTALL_CLAUDE" "$SKIP_CLAUDE" && echo -e "  $marker Claude Code configuration, agents and skills"
+    should_install "aliases" "$INSTALL_ALIASES" "$SKIP_ALIASES" && echo -e "  $marker Shell aliases"
+    should_install "scripts" "$INSTALL_SCRIPTS" "$SKIP_SCRIPTS" && echo -e "  $marker Custom development scripts"
+    should_install "themes" "$INSTALL_THEMES" "$SKIP_THEMES" && echo -e "  $marker Xcode themes"
+    should_install "templates" "$INSTALL_TEMPLATES" "$SKIP_TEMPLATES" && echo -e "  $marker Xcode templates"
+    should_install "header" "$INSTALL_HEADER" "$SKIP_HEADER" && echo -e "  $marker Xcode header template"
+    return 0
+}
+
+print_next_steps() {
+    local steps=()
+    if should_install "aliases" "$INSTALL_ALIASES" "$SKIP_ALIASES"; then
+        steps+=("Restart your terminal or run: ${WHITE}source ~/.zshrc${NC}")
+        steps+=("Try the new aliases: ${WHITE}gl${NC}, ${WHITE}gp${NC}, ${WHITE}gst${NC}, ${WHITE}ll${NC}")
+    fi
+    should_install "tools" "$INSTALL_TOOLS" "$SKIP_TOOLS" && steps+=("Format Swift code: ${WHITE}swiftformat .${NC}")
+    should_install "scripts" "$INSTALL_SCRIPTS" "$SKIP_SCRIPTS" && steps+=("Test deeplinks: ${WHITE}dl your-app://test${NC}")
+
+    if [[ ${#steps[@]} -gt 0 ]]; then
+        echo -e "\n${YELLOW}📝 Next steps:${NC}"
+        for step in "${steps[@]}"; do
+            echo -e "  • $step"
+        done
+    fi
+    should_install "swiftformat-config" "$INSTALL_SWIFTFORMAT_CONFIG" "$SKIP_SWIFTFORMAT_CONFIG" && \
+        echo -e "\n${PURPLE}💡 Pro tip:${NC} Your SwiftFormat config is at ${WHITE}~/.swiftformat${NC}"
+    return 0
+}
+
+if [[ -z "$(print_selected_components "")" ]]; then
+    print_warning "No components selected: nothing to install"
+    exit 0
+fi
+
 # Final message
 if $DRY_RUN; then
     print_header "Dry Run Complete!"
     echo -e "\n${YELLOW}🔍 This was a dry run - no changes were made${NC}"
     echo -e "\n${CYAN}📋 What would be installed:${NC}"
-    echo -e "  ${YELLOW}○${NC} Homebrew package manager"
-    echo -e "  ${YELLOW}○${NC} eza (modern ls replacement)"
-    echo -e "  ${YELLOW}○${NC} SwiftFormat with custom configuration"
-    echo -e "  ${YELLOW}○${NC} JetBrains Mono Nerd Font"
-    echo -e "  ${YELLOW}○${NC} Claude Code configuration and agents"
-    echo -e "  ${YELLOW}○${NC} Shell aliases for Git and development"
-    echo -e "  ${YELLOW}○${NC} Xcode themes and templates"
-    echo -e "  ${YELLOW}○${NC} Custom development scripts"
+    print_selected_components "${YELLOW}○${NC}"
     echo -e "\n${GREEN}Run without --dry-run to install:${NC} ${WHITE}./install.sh${NC}"
 else
     print_header "Installation Complete!"
-    print_success "All components installed successfully!"
+    print_success "Selected components installed successfully!"
 
-    echo -e "\n${GREEN}🎉 Your development environment is ready! 🎉${NC}"
     echo -e "\n${CYAN}📋 What was installed:${NC}"
-    echo -e "  ${GREEN}✓${NC} Homebrew package manager"
-    echo -e "  ${GREEN}✓${NC} eza (modern ls replacement)"
-    echo -e "  ${GREEN}✓${NC} SwiftFormat with custom configuration"
-    echo -e "  ${GREEN}✓${NC} JetBrains Mono Nerd Font"
-    echo -e "  ${GREEN}✓${NC} Claude Code configuration and agents"
-    echo -e "  ${GREEN}✓${NC} Shell aliases for Git and development"
-    echo -e "  ${GREEN}✓${NC} Xcode themes and templates"
-    echo -e "  ${GREEN}✓${NC} Custom development scripts"
-
-    echo -e "\n${YELLOW}📝 Next steps:${NC}"
-    echo -e "  1. Restart your terminal or run: ${WHITE}source ~/.zshrc${NC}"
-    echo -e "  2. Try the new aliases: ${WHITE}gl${NC}, ${WHITE}gp${NC}, ${WHITE}gst${NC}, ${WHITE}ll${NC}"
-    echo -e "  3. Format Swift code: ${WHITE}swiftformat .${NC}"
-    echo -e "  4. Test deeplinks: ${WHITE}dl your-app://test${NC}"
-
-    echo -e "\n${PURPLE}💡 Pro tip:${NC} Your SwiftFormat config is at ${WHITE}~/.swiftformat${NC}"
-    echo -e "   You can customize it or use it in your projects!"
+    print_selected_components "${GREEN}✓${NC}"
+    print_next_steps
 
     echo -e "\n${GREEN}Happy coding! 🚀${NC}"
 

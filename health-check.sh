@@ -3,6 +3,8 @@
 USER="$(whoami)"
 XC_DIR="/Users/$USER/Library/Developer/Xcode"
 XC_USER_DATA="$XC_DIR/UserData"
+REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$REPO_DIR/lib/retired-entries.sh"
 
 # Colors for output
 RED='\033[0;31m'
@@ -128,6 +130,16 @@ check_swiftformat() {
     else
         print_fail "SwiftFormat not installed"
         print_info "Run './install.sh' or 'brew install swiftformat'"
+    fi
+}
+
+check_jq() {
+    print_header "jq"
+    if command_exists jq; then
+        print_pass "jq installed"
+    else
+        print_warning "jq not installed: install.sh and sync.sh skip the Claude settings merge"
+        print_info "Run 'brew install jq'"
     fi
 }
 
@@ -330,6 +342,43 @@ check_claude_agents() {
         print_fail "Claude agents directory not found"
         print_info "Run './install.sh' to create and install agents"
     fi
+    check_retired_entries "claude/agents" "$agents_dir" "agent"
+}
+
+check_retired_entries() {
+    local subdir="$1"
+    local dest="$2"
+    local label="$3"
+    local name
+
+    while read -r name; do
+        [ -e "$dest/$name" ] || continue
+        print_warning "Claude $label deleted from the repo is still installed: $name"
+        print_info "Run './install.sh --only-claude' to remove it"
+    done < <(retired_repo_entries "$REPO_DIR" "$subdir")
+}
+
+# Check Claude skills
+check_claude_skills() {
+    print_header "Claude Skills"
+    local skills_dir="$HOME/.claude/skills"
+    local tracked=false
+
+    for skill in "$REPO_DIR"/claude/skills/*/; do
+        [ -d "$skill" ] || continue
+        tracked=true
+        local skill_name
+        skill_name="$(basename "$skill")"
+        if [ -f "$skills_dir/$skill_name/SKILL.md" ]; then
+            print_pass "Claude skill installed: $skill_name"
+        else
+            print_fail "Claude skill not installed: $skill_name"
+            print_info "Run './install.sh --only-claude' to install it"
+        fi
+    done
+
+    $tracked || print_info "No Claude skills tracked in the repo"
+    check_retired_entries "claude/skills" "$skills_dir" "skill"
 }
 
 # Check for Xcode installation
@@ -420,6 +469,7 @@ print_info "Starting health check...\n"
 check_homebrew
 check_eza
 check_swiftformat
+check_jq
 check_font
 check_aliases
 check_scripts
@@ -429,6 +479,7 @@ check_xcode_templates
 check_xcode_header
 check_claude_config
 check_claude_agents
+check_claude_skills
 check_git
 
 print_summary

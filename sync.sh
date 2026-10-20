@@ -195,12 +195,21 @@ sync_claude_settings() {
         return
     fi
 
+    [[ -f "$repo_file" ]] || echo '{}' > "$repo_file"
+    if ! jq empty "$installed" "$repo_file" 2>/dev/null; then
+        print_missing "$label (invalid JSON)"
+        return
+    fi
+
     local owned merged
     owned="$(mktemp)"
     merged="$(mktemp)"
-    [[ -f "$repo_file" ]] || echo '{}' > "$repo_file"
-    claude_settings_owned_subset "$installed" "$repo_file" > "$owned"
-    claude_settings_merge_owned "$repo_file" "$owned" > "$merged"
+    if ! claude_settings_owned_subset "$installed" "$repo_file" > "$owned" ||
+       ! claude_settings_merge_owned "$repo_file" "$owned" > "$merged"; then
+        print_missing "$label (merge failed)"
+        rm -f "$owned" "$merged"
+        return
+    fi
 
     if claude_settings_equal "$merged" "$repo_file"; then
         print_ok "$label"

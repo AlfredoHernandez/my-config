@@ -18,6 +18,7 @@ This repository contains my personal development configuration that I use across
 ### 🐚 Shell Configuration
 - **Git Aliases** - Shortcuts for common Git operations
 - **Xcode Aliases** - Swift Package Manager and Xcode-specific commands
+- **Claude Code Aliases** - Launch Claude Code with preset models and effort levels
 - **Enhanced File Listing** - Modern `ls` commands using [eza](https://formulae.brew.sh/formula/eza#default)
 - **Custom Script Aliases** - Quick access to development utilities
 
@@ -30,7 +31,7 @@ This repository contains my personal development configuration that I use across
 
 ### 🤖 Claude Code Integration
 - **Global Configuration** - Custom instructions for Claude Code in `~/.claude/CLAUDE.md`
-- **Settings** - Shared permissions, attribution and plugins. `install.sh` merges only these keys into `~/.claude/settings.json` (backup in `settings.json.bak`) and keeps local keys such as hooks and preferences; `sync.sh` copies only these keys back
+- **Settings** - Shared permissions, attribution and plugins. `install.sh` merges only these keys into `~/.claude/settings.json` (backup in `settings.json.bak`) and keeps local keys such as hooks and preferences; `sync.sh` copies only these keys back. The merge needs [jq](https://formulae.brew.sh/formula/jq) (`brew install jq`); without it the merge is skipped
 - **Custom Agents** - Specialized AI assistants for common tasks:
   - `code-review` - Read-only senior code reviewer that reports findings and hand-offs
   - `design-patterns` - GoF design patterns expert
@@ -145,7 +146,7 @@ Installs or updates all components from the repo to your system. If a file alrea
 
 ### `update.sh` - Update
 
-Updates installed components to their latest versions. Pulls the latest repo changes and syncs configuration files from the repo to your system.
+Updates installed components to their latest versions. Pulls `origin/main` with rebase into the current branch, upgrades eza and SwiftFormat, and copies changed files from the repo to your system: SwiftFormat config, `CLAUDE.md`, Claude agents and skills, Xcode themes and `deeplink.sh`. Claude settings, aliases, Xcode templates and the header template are not updated; run `install.sh` for those.
 
 ```bash
 ./update.sh            # Update everything
@@ -221,21 +222,28 @@ Removes installed components from your system.
 | `gca` | `git commit --amend --no-edit` | Amend last commit |
 | `glog` | `git log` | Show commit history |
 | `gcp` | `git cherry-pick` | Cherry-pick commits |
-| `cleanup` | Custom script | Delete merged branches |
+| `cleanup` | `git branch --merged \| grep -Ev "(^\*\|master\|main\|develop)" \| xargs git branch -d` | Delete merged branches except main, master and develop |
 | `grh` | `git reset --soft HEAD~1` | Soft reset last commit |
 
 ### Xcode & Swift
 | Alias | Command | Description |
 |-------|---------|-------------|
-| `spm` | `xcodebuild -resolvePackageDependencies` | Resolve SPM dependencies |
+| `spm` | `xcodebuild -resolvePackageDependencies -scmProvider system` | Resolve SPM dependencies with the system Git |
+
+### Claude Code
+| Alias | Command | Description |
+|-------|---------|-------------|
+| `cl` | `claude --model opus --effort high --advisor opus --fallback-model sonnet` | Default session, Sonnet subagents |
+| `clx` | `claude --model opus --effort xhigh --advisor opus` | Hard work: architecture, big refactors, hard bugs. Opus subagents |
+| `clq` | `claude --model sonnet --effort medium` | Quick questions and exploration. Haiku subagents |
 
 ### Enhanced File Listing (eza)
 | Alias | Command | Description |
 |-------|---------|-------------|
-| `ls` | `eza --grid --icons --color=auto` | Grid view with icons and colors |
-| `ll` | `eza --long --icons --color=auto` | Long format with icons |
-| `la` | `eza --grid --icons --color=auto --all` | Grid view including hidden files |
-| `lla` | `eza --long --icons --color=auto --all` | Long format including hidden files |
+| `ls` | `eza --grid --color auto --icons --sort=type` | Grid view with icons, directories first |
+| `ll` | `eza --long --color always --icons --sort=type` | Long format with icons |
+| `la` | `eza --grid --all --color auto --icons --sort=type` | Grid view including hidden files |
+| `lla` | `eza --long --all --color auto --icons --sort=type` | Long format including hidden files |
 
 ### Custom Scripts
 | Alias | Command | Description |
@@ -295,6 +303,7 @@ The repository includes 8 color themes:
 - **Xcode** (for templates and themes)
 - **zsh shell** (default on modern macOS)
 - **Internet connection** (for Homebrew and eza installation)
+- **jq** (to merge Claude Code settings)
 
 ## 🤝 Contributing
 

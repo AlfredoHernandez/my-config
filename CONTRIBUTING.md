@@ -99,7 +99,7 @@ Before submitting:
    ```bash
    brew install bats-core shellcheck
    bats tests
-   shellcheck -S warning *.sh lib/*.sh scripts/*.sh tests/test_helper.bash
+   shellcheck -S warning *.sh lib/*.sh scripts/*.sh tests/test_helper.bash tests/*.bats
    ```
 
    Each test runs the scripts for real in its own temporary `HOME`. Add a test for every bug fix and new behavior, in the matching file under `tests/`

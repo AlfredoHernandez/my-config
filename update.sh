@@ -11,9 +11,6 @@ source "$REPO_DIR/lib/config-install.sh"
 # Error handler
 trap 'echo "Error: Command failed at line $LINENO. Exit code: $?" >&2' ERR
 
-# Configuration
-NERD_FONT_VERSION="v3.4.0"
-
 # Flags
 CHECK_ONLY=false
 DRY_RUN=false
@@ -25,18 +22,10 @@ UPDATE_FONT=false
 REPO_CHANGED=false
 REPO_PREVIOUS_COMMIT=""
 
-# Counters
-UPDATED=0
-SKIPPED=0
-FAILED=0
-
-print_success() { echo -e "${GREEN}[✓]${NC} $1"; UPDATED=$((UPDATED + 1)); }
-print_skip() { echo -e "${YELLOW}[−]${NC} $1"; SKIPPED=$((SKIPPED + 1)); }
-print_fail() { echo -e "${RED}[✗]${NC} $1"; FAILED=$((FAILED + 1)); }
 print_check() { echo -e "${CYAN}[CHECK]${NC} $1"; }
 
 report_unchanged() { SKIPPED=$((SKIPPED + 1)); }
-report_changed() { print_success "$1"; }
+report_changed() { print_updated "$1"; }
 report_planned() { print_check "$1"; }
 report_warning() { print_warning "$1"; }
 report_failure() { print_fail "$1"; }
@@ -141,7 +130,7 @@ update_repo() {
         local new_commit
         new_commit=$(git rev-parse HEAD)
         if [[ "$current_commit" != "$new_commit" ]]; then
-            print_success "Repository updated"
+            print_updated "Repository updated"
             REPO_CHANGED=true
             REPO_PREVIOUS_COMMIT="$current_commit"
         else
@@ -185,43 +174,49 @@ update_tools() {
         return 0
     fi
 
-    local packages=("eza" "swiftformat")
+    local brewfile="$REPO_DIR/Brewfile"
 
     if $CHECK_ONLY; then
         print_status "Checking for outdated packages..."
-        local outdated
-        outdated=$(brew outdated 2>/dev/null) || true
-        for pkg in "${packages[@]}"; do
-            if echo "$outdated" | grep -q "^$pkg"; then
-                local current
-                current=$(brew list --versions "$pkg" 2>/dev/null | awk '{print $2}') || true
-                print_check "$pkg is outdated (current: $current)"
-            elif command_exists "$pkg"; then
-                print_info "$pkg is up to date"
+        local installed outdated formula version
+        installed="$(installed_formulae)"
+        outdated="$(outdated_brewfile_formulae "$brewfile")"
+        for formula in $(brewfile_formulae "$brewfile"); do
+            version="$(formula_version "$installed" "$formula")"
+            if [[ -z "$version" ]]; then
+                print_check "$formula not installed"
+            elif grep -qxF "$formula" <<< "$outdated"; then
+                print_check "$formula is outdated (current: $version)"
+            else
+                print_info "$formula is up to date"
             fi
         done
         return 0
     fi
 
     print_status "Updating Homebrew..."
-    brew update --quiet
+    brew update --quiet || print_warning "brew update failed: upgrading with the current formulae"
 
-    for pkg in "${packages[@]}"; do
-        if command_exists "$pkg"; then
-            if brew outdated | grep -q "^$pkg"; then
-                print_status "Upgrading $pkg..."
-                if brew upgrade "$pkg" 2>/dev/null; then
-                    print_success "Updated $pkg"
-                else
-                    print_fail "Failed to update $pkg"
-                fi
-            else
-                print_skip "$pkg already up to date"
-            fi
-        else
-            print_info "$pkg not installed, skipping"
-        fi
-    done
+    # Missing packages count too, such as ones added to the Brewfile on another Mac
+    local pending
+    pending="$( { missing_brewfile_formulae "$brewfile"; outdated_brewfile_formulae "$brewfile"; } | paste -sd ' ' -)"
+    if [[ -z "$pending" ]]; then
+        print_skip "Brewfile packages already up to date"
+        return 0
+    fi
+
+    print_status "Upgrading from the Brewfile: $pending"
+    if brew bundle install --file="$brewfile" --upgrade; then
+        print_updated "Brewfile packages updated: $pending"
+    else
+        print_fail "brew bundle failed: run 'brew bundle install --file=$brewfile' to see why"
+    fi
+}
+
+outdated_brewfile_formulae() {
+    local outdated
+    outdated="$(brew outdated --formula --quiet 2>/dev/null)" || true
+    brewfile_formulae "$1" | grep -xF -f <(printf '%s\n' "$outdated") || true
 }
 
 # Update configuration files with the same steps install.sh runs
@@ -241,47 +236,39 @@ update_config() {
 update_font() {
     print_header "Nerd Font"
 
-    local font_dir="$HOME/Library/Fonts"
-
-    # Check if font is installed
-    if ! ls "$font_dir"/JetBrainsMonoNerdFont*.ttf &>/dev/null && \
-       ! ls "$font_dir"/JetBrainsMonoNFM*.ttf &>/dev/null; then
-        if $CHECK_ONLY; then
-            print_check "JetBrains Mono Nerd Font not installed"
+    if nerd_font_cask_installed; then
+        if ! brew outdated --cask --quiet 2>/dev/null | grep -qxF "$NERD_FONT_CASK"; then
+            print_skip "JetBrains Mono Nerd Font already up to date"
+        elif $CHECK_ONLY; then
+            print_check "JetBrains Mono Nerd Font is outdated"
+        elif brew upgrade --cask "$NERD_FONT_CASK"; then
+            print_updated "JetBrains Mono Nerd Font upgraded"
         else
-            print_info "Font not installed, run install.sh to install"
+            print_fail "Could not upgrade the $NERD_FONT_CASK cask"
         fi
         return 0
     fi
 
-    if $CHECK_ONLY; then
-        print_info "JetBrains Mono Nerd Font installed (version check requires reinstall)"
-        print_info "Latest version in config: $NERD_FONT_VERSION"
-        return 0
+    if [[ -z "$(nerd_font_files)" ]]; then
+        install_nerd_font
+        return
     fi
 
-    print_info "Font reinstall not implemented (fonts don't have easy version detection)"
-    print_info "To update: delete fonts from $font_dir and run install.sh"
-    print_skip "Font update skipped"
+    print_skip "JetBrains Mono Nerd Font installed by hand, so Homebrew can't upgrade it"
+    print_info "To switch: delete its files from ~/Library/Fonts and run ./install.sh --only-font"
 }
 
 print_summary() {
     echo ""
-    echo -e "${WHITE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     if $CHECK_ONLY; then
-        echo -e "${WHITE}Check Complete${NC}"
+        print_title "Check Complete"
     else
-        echo -e "${WHITE}Update Summary${NC}"
-    fi
-    echo -e "${WHITE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-
-    if ! $CHECK_ONLY; then
-        echo -e "  ${GREEN}✓ Updated:${NC} $UPDATED"
+        print_title "Update Summary"
+        echo -e "  ${GREEN}↑ Updated:${NC} $UPDATED"
         echo -e "  ${YELLOW}− Skipped:${NC} $SKIPPED"
         echo -e "  ${RED}✗ Failed:${NC}  $FAILED"
+        print_rule
     fi
-
-    echo -e "${WHITE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo ""
 
     if $CHECK_ONLY; then
@@ -295,11 +282,7 @@ print_summary() {
 
 # Main execution
 if ! is_restarted_run; then
-    echo -e "${WHITE}"
-    echo "╔════════════════════════════════════════════════════╗"
-    echo "║          🔄 Configuration Update Script            ║"
-    echo "╚════════════════════════════════════════════════════╝"
-    echo -e "${NC}"
+    print_banner "🔄 Configuration Update Script"
 fi
 
 DRY_RUN=$CHECK_ONLY
@@ -311,7 +294,7 @@ fi
 if $UPDATE_ALL || $UPDATE_REPO; then
     if is_restarted_run; then
         cd "$SCRIPT_DIR" || exit 1
-        print_success "Repository updated from $(git rev-parse --short "$RESTARTED_FROM") to $(git rev-parse --short HEAD), running its update.sh"
+        print_updated "Repository updated from $(git rev-parse --short "$RESTARTED_FROM") to $(git rev-parse --short HEAD), running its update.sh"
     else
         update_repo
         restart_if_repo_changed
@@ -331,3 +314,7 @@ if $UPDATE_ALL || $UPDATE_FONT; then
 fi
 
 print_summary
+
+if [[ $FAILED -gt 0 ]]; then
+    exit 1
+fi

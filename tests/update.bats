@@ -14,6 +14,8 @@ make_fake_origin() {
     push_src
     git clone -q --branch main "$GIT_DIR_ROOT/origin.git" "$GIT_DIR_ROOT/local"
     LOCAL_REPO="$GIT_DIR_ROOT/local"
+    # The restart tests run the font step, which installs the font when it is missing
+    fake_brew
 }
 
 commit_src() { git -C "$GIT_DIR_ROOT/src" -c user.name=test -c user.email=test@example.com commit -qam "$1"; }
@@ -58,6 +60,7 @@ push_update_with_marker() {
 
     run_script "$REPO_DIR/update.sh" --config
 
+    [ "$status" -eq 1 ]
     grep -q "Could not update CLAUDE.md" <<< "$output"
     refute_output_matches "Update completed successfully"
     refute_output_matches "Error: Command failed"

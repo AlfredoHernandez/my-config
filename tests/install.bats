@@ -119,3 +119,14 @@ load test_helper
     [ "$status" -eq 0 ]
     refute_output_matches "Running post-installation verification"
 }
+
+@test "a failed config step is counted and the next steps still run" {
+    echo "local style" > "$HOME/.swiftformat"
+    chmod 444 "$HOME/.swiftformat"
+
+    run_script "$REPO_DIR/install.sh" --only-swiftformat-config --only-claude --no-verify
+
+    [ "$status" -eq 1 ]
+    grep -q "1 step(s) failed" <<< "$output"
+    [ -f "$HOME/.claude/CLAUDE.md" ]
+}

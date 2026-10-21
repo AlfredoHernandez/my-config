@@ -11,9 +11,6 @@ cd "$REPO_DIR"
 # Error handler - shows where the error occurred
 trap 'echo "Error: Command failed at line $LINENO. Exit code: $?" >&2' ERR
 
-# Configuration
-NERD_FONT_VERSION="v3.4.0"
-
 # Installation flags (default: install everything)
 DRY_RUN=false
 VALIDATE_ONLY=false
@@ -57,7 +54,7 @@ show_help() {
     echo ""
     echo "Install Specific Components (only installs selected components):"
     echo "  --only-homebrew            Install only Homebrew package manager"
-    echo "  --only-tools               Install only development tools (eza, SwiftFormat)"
+    echo "  --only-tools               Install only the Brewfile tools"
     echo "  --only-font                Install only JetBrains Mono Nerd Font"
     echo "  --only-swiftformat-config  Install only SwiftFormat configuration"
     echo "  --only-aliases             Install only shell aliases"
@@ -96,7 +93,7 @@ list_components() {
     echo ""
     echo "Development Tools:"
     echo "  • homebrew             - Homebrew package manager"
-    echo "  • tools                - eza (modern ls) and SwiftFormat"
+    echo "  • tools                - Command-line tools listed in the Brewfile"
     echo "  • font                 - JetBrains Mono Nerd Font"
     echo "  • swiftformat-config   - SwiftFormat configuration file"
     echo ""
@@ -275,25 +272,8 @@ should_install() {
     return 1
 }
 
-# Function to print colored output
-print_success() {
-    echo -e "${GREEN}[✓]${NC} $1"
-}
-
 print_dry_run() {
     echo -e "${YELLOW}[DRY-RUN]${NC} Would: $1"
-}
-
-print_pass() {
-    echo -e "${GREEN}[✓]${NC} $1"
-}
-
-print_fail() {
-    echo -e "${RED}[✗]${NC} $1"
-}
-
-print_updated() {
-    echo -e "${GREEN}[↑]${NC} $1"
 }
 
 report_unchanged() { print_success "$1"; }
@@ -304,85 +284,66 @@ report_failure() { print_fail "$1"; }
 
 # Validate system prerequisites
 validate_prerequisites() {
-    echo -e "${WHITE}"
-    echo "╔══════════════════════════════════════════════════════════════╗"
-    echo "║              🔍 System Prerequisites Check                    ║"
-    echo "╚══════════════════════════════════════════════════════════════╝"
-    echo -e "${NC}"
-
-    local passed=0
-    local failed=0
+    print_banner "🔍 System Prerequisites Check"
 
     # Check macOS
     print_header "Operating System"
     if [[ "$(uname)" == "Darwin" ]]; then
         local macos_version
         macos_version=$(sw_vers -productVersion) || true
-        print_pass "macOS detected (version $macos_version)"
-        passed=$((passed + 1))
+        print_success "macOS detected (version $macos_version)"
     else
         print_fail "macOS required (detected: $(uname))"
-        failed=$((failed + 1))
     fi
 
     # Check architecture
     local arch
     arch=$(uname -m) || true
     if [[ "$arch" == "arm64" ]]; then
-        print_pass "Apple Silicon detected"
+        print_success "Apple Silicon detected"
     else
-        print_pass "Intel Mac detected"
+        print_success "Intel Mac detected"
     fi
-    passed=$((passed + 1))
 
     # Check Xcode Command Line Tools
     print_header "Development Tools"
     if xcode-select -p &>/dev/null; then
-        print_pass "Xcode Command Line Tools installed"
-        passed=$((passed + 1))
+        print_success "Xcode Command Line Tools installed"
     else
         print_fail "Xcode Command Line Tools not installed"
         print_info "  Install with: xcode-select --install"
-        failed=$((failed + 1))
     fi
 
     # Check Git
     if command -v git &>/dev/null; then
         local git_version
         git_version=$(git --version | awk '{print $3}') || true
-        print_pass "Git installed (version $git_version)"
-        passed=$((passed + 1))
+        print_success "Git installed (version $git_version)"
     else
         print_fail "Git not installed"
-        failed=$((failed + 1))
     fi
 
     # Check curl
     if command -v curl &>/dev/null; then
-        print_pass "curl installed"
-        passed=$((passed + 1))
+        print_success "curl installed"
     else
         print_fail "curl not installed (required for downloads)"
-        failed=$((failed + 1))
     fi
 
     if command -v jq &>/dev/null; then
-        print_pass "jq installed"
-        passed=$((passed + 1))
+        print_success "jq installed"
     else
         print_warning "jq not installed: the Claude settings merge will be skipped"
-        print_info "  Install with: brew install jq"
+        print_info "  Install with: ./install.sh --only-tools"
     fi
 
     # Check network connectivity
     print_header "Network"
     if curl -s --head --connect-timeout 5 https://github.com &>/dev/null; then
-        print_pass "Network connectivity OK (github.com reachable)"
-        passed=$((passed + 1))
+        print_success "Network connectivity OK (github.com reachable)"
     else
         print_fail "Cannot reach github.com"
         print_info "  Check your internet connection"
-        failed=$((failed + 1))
     fi
 
     # Check disk space
@@ -390,29 +351,23 @@ validate_prerequisites() {
     local available_space
     available_space=$(df -g "$HOME" | awk 'NR==2 {print $4}') || true
     if [[ "$available_space" -ge 1 ]]; then
-        print_pass "Sufficient disk space (${available_space}GB available)"
-        passed=$((passed + 1))
+        print_success "Sufficient disk space (${available_space}GB available)"
     else
         print_fail "Low disk space (${available_space}GB available, need at least 1GB)"
-        failed=$((failed + 1))
     fi
 
     # Check write permissions
     print_header "Permissions"
     if [[ -w "$HOME" ]]; then
-        print_pass "Home directory writable"
-        passed=$((passed + 1))
+        print_success "Home directory writable"
     else
         print_fail "Cannot write to home directory"
-        failed=$((failed + 1))
     fi
 
     if [[ -w "$HOME/Library/Fonts" ]] || { $DRY_RUN && [[ -w "$HOME" ]]; } || mkdir -p "$HOME/Library/Fonts" 2>/dev/null; then
-        print_pass "Fonts directory accessible"
-        passed=$((passed + 1))
+        print_success "Fonts directory accessible"
     else
         print_fail "Cannot access fonts directory"
-        failed=$((failed + 1))
     fi
 
     # Check shell
@@ -420,27 +375,23 @@ validate_prerequisites() {
     local current_shell
     current_shell=$(basename "$SHELL") || true
     if [[ "$current_shell" == "zsh" ]]; then
-        print_pass "Using zsh (recommended)"
-        passed=$((passed + 1))
+        print_success "Using zsh (recommended)"
     elif [[ "$current_shell" == "bash" ]]; then
         print_warning "Using bash (zsh recommended for aliases)"
-        passed=$((passed + 1))
     else
         print_info "Using $current_shell"
-        passed=$((passed + 1))
     fi
 
     # Summary
     echo ""
-    echo -e "${WHITE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${WHITE}Validation Summary${NC}"
-    echo -e "${WHITE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "  ${GREEN}✓ Passed:${NC} $passed"
-    echo -e "  ${RED}✗ Failed:${NC} $failed"
-    echo -e "${WHITE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    print_title "Validation Summary"
+    echo -e "  ${GREEN}✓ Passed:${NC}   $SUCCEEDED"
+    echo -e "  ${YELLOW}! Warnings:${NC} $WARNINGS"
+    echo -e "  ${RED}✗ Failed:${NC}   $FAILED"
+    print_rule
     echo ""
 
-    if [[ $failed -eq 0 ]]; then
+    if [[ $FAILED -eq 0 ]]; then
         echo -e "${GREEN}All prerequisites met! Ready to install.${NC}"
         echo -e "${CYAN}Run ./install.sh to begin installation.${NC}"
         return 0
@@ -456,26 +407,6 @@ if $VALIDATE_ONLY; then
     validate_prerequisites
     exit $?
 fi
-
-print_banner() {
-    echo -e "${PURPLE}"
-    echo "╔══════════════════════════════════════════════════════════════╗"
-    echo "║                                                              ║"
-    echo "║           🚀 My Development Configuration Setup 🚀           ║"
-    echo "║                                                              ║"
-    echo "║    Setting up your macOS development environment with:       ║"
-    echo "║    • Homebrew package manager                               ║"
-    echo "║    • eza (modern ls replacement)                            ║"
-    echo "║    • SwiftFormat (Swift code formatter)                     ║"
-    echo "║    • JetBrains Mono Nerd Font                               ║"
-    echo "║    • Claude Code configuration, agents and skills           ║"
-    echo "║    • Custom shell aliases                                   ║"
-    echo "║    • Xcode themes and templates                             ║"
-    echo "║    • Development scripts                                    ║"
-    echo "║                                                              ║"
-    echo "╚══════════════════════════════════════════════════════════════╝"
-    echo -e "${NC}"
-}
 
 # Function to install Homebrew if not present
 install_homebrew() {
@@ -501,79 +432,35 @@ install_homebrew() {
     fi
 }
 
-# Function to install eza if not present
-install_eza() {
-    print_header "eza Installation"
-    if ! command_exists eza; then
-        if $DRY_RUN; then
-            print_dry_run "Install eza via Homebrew"
-        else
-            print_status "Installing eza (modern ls replacement)..."
-            brew install eza
-            print_success "eza installed successfully"
-        fi
+install_tools() {
+    print_header "Development Tools (Brewfile)"
+    local missing
+    missing="$(missing_brewfile_formulae "$REPO_DIR/Brewfile" | paste -sd ' ' -)"
+
+    if [[ -z "$missing" ]]; then
+        print_success "Brewfile packages already installed"
+        return 0
+    fi
+    if $DRY_RUN; then
+        print_dry_run "Install from the Brewfile: $missing"
+        return 0
+    fi
+    if ! command_exists brew; then
+        print_fail "Homebrew not installed: run ./install.sh --only-homebrew first"
+        return 0
+    fi
+
+    print_status "Installing from the Brewfile: $missing"
+    if brew bundle install --file="$REPO_DIR/Brewfile" --no-upgrade; then
+        print_success "Brewfile packages installed"
     else
-        print_success "eza already installed"
+        print_fail "brew bundle failed for: $missing"
     fi
 }
 
-# Function to install SwiftFormat if not present
-install_swiftformat() {
-    print_header "SwiftFormat Installation"
-    if ! command_exists swiftformat; then
-        if $DRY_RUN; then
-            print_dry_run "Install SwiftFormat via Homebrew"
-        else
-            print_status "Installing SwiftFormat (Swift code formatter)..."
-            brew install swiftformat
-            print_success "SwiftFormat installed successfully"
-        fi
-    else
-        print_success "SwiftFormat already installed"
-    fi
-}
-
-# Function to install JetBrains Mono Nerd Font
 install_jetbrains_mono_nerd_font() {
     print_header "JetBrains Mono Nerd Font Installation"
-    local font_dir="$HOME/Library/Fonts"
-    local font_url="https://github.com/ryanoasis/nerd-fonts/releases/download/${NERD_FONT_VERSION}/JetBrainsMono.zip"
-
-    # Check if font is already installed
-    if ls "$font_dir"/JetBrainsMonoNerdFont*.ttf &>/dev/null || \
-       ls "$font_dir"/JetBrainsMonoNFM*.ttf &>/dev/null || \
-       ls /Library/Fonts/JetBrainsMonoNerdFont*.ttf &>/dev/null || \
-       ls /Library/Fonts/JetBrainsMonoNFM*.ttf &>/dev/null; then
-        print_success "JetBrains Mono Nerd Font already installed"
-        return 0
-    fi
-
-    if $DRY_RUN; then
-        print_dry_run "Download JetBrains Mono Nerd Font from GitHub"
-        print_dry_run "Install font files to $font_dir"
-        return 0
-    fi
-
-    local temp_dir
-
-    temp_dir=$(mktemp -d)
-
-    print_status "Downloading JetBrains Mono Nerd Font..."
-    curl -fsSL "$font_url" -o "$temp_dir/JetBrainsMono.zip"
-
-    if [[ $? -ne 0 ]]; then
-        print_warning "Failed to download JetBrains Mono Nerd Font"
-        rm -rf "$temp_dir"
-        return 1
-    fi
-
-    print_status "Installing font..."
-    unzip -q "$temp_dir/JetBrainsMono.zip" -d "$temp_dir/JetBrainsMono"
-    mkdir -p "$font_dir"
-    cp "$temp_dir/JetBrainsMono"/*.ttf "$font_dir/"
-
-    rm -rf "$temp_dir"
-    print_success "JetBrains Mono Nerd Font installed successfully"
+    install_nerd_font
 }
 
 # Function to add aliases to .zshrc
@@ -601,13 +488,18 @@ add_aliases_to_zshrc() {
     fi
 }
 
+# A failed step reports itself and must not stop the steps after it: the summary shows the count.
+# A step that fails without reporting it is counted here
+run_step() {
+    local failed_before=$FAILED
+    "$@" && return 0
+    [[ $FAILED -gt $failed_before ]] || print_fail "$1 failed"
+}
+
 # Main installation process
-print_banner
+print_banner "🚀 My Development Configuration Setup"
 if $DRY_RUN; then
-    echo -e "${YELLOW}╔══════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${YELLOW}║                      DRY RUN MODE                            ║${NC}"
-    echo -e "${YELLOW}║           No changes will be made to your system             ║${NC}"
-    echo -e "${YELLOW}╚══════════════════════════════════════════════════════════════╝${NC}"
+    echo -e "${YELLOW}DRY RUN MODE: no changes will be made to your system${NC}"
 fi
 
 # Show what will be installed
@@ -615,7 +507,7 @@ if ! $INSTALL_ALL; then
     print_info "Selective installation mode enabled"
     echo -e "${CYAN}Components to install:${NC}"
     $INSTALL_HOMEBREW && echo "  • Homebrew"
-    $INSTALL_TOOLS && echo "  • Development tools (eza, SwiftFormat)"
+    $INSTALL_TOOLS && echo "  • Brewfile tools"
     $INSTALL_FONT && echo "  • JetBrains Mono Nerd Font"
     $INSTALL_SWIFTFORMAT_CONFIG && echo "  • SwiftFormat configuration"
     $INSTALL_ALIASES && echo "  • Shell aliases"
@@ -631,79 +523,73 @@ print_info "Starting installation process..."
 
 # Check and install Homebrew
 if should_install "homebrew" "$INSTALL_HOMEBREW" "$SKIP_HOMEBREW"; then
-    install_homebrew
+    run_step install_homebrew
 fi
 
-# Check and install eza
 if should_install "tools" "$INSTALL_TOOLS" "$SKIP_TOOLS"; then
-    install_eza
-fi
-
-# Check and install SwiftFormat
-if should_install "tools" "$INSTALL_TOOLS" "$SKIP_TOOLS"; then
-    install_swiftformat
+    run_step install_tools
 fi
 
 # Check and install JetBrains Mono Nerd Font
 if should_install "font" "$INSTALL_FONT" "$SKIP_FONT"; then
-    install_jetbrains_mono_nerd_font
+    run_step install_jetbrains_mono_nerd_font
 fi
 
 # Install SwiftFormat configuration
 if should_install "swiftformat-config" "$INSTALL_SWIFTFORMAT_CONFIG" "$SKIP_SWIFTFORMAT_CONFIG"; then
-    install_swiftformat_config
+    run_step install_swiftformat_config
 fi
 
 # Install Claude Code configuration
 if should_install "claude" "$INSTALL_CLAUDE" "$SKIP_CLAUDE"; then
-    install_claude_config
+    run_step install_claude_config
 fi
 
 # Install Claude agents
 if should_install "claude" "$INSTALL_CLAUDE" "$SKIP_CLAUDE"; then
-    install_claude_agents
+    run_step install_claude_agents
 fi
 
 # Install Claude skills
 if should_install "claude" "$INSTALL_CLAUDE" "$SKIP_CLAUDE"; then
-    install_claude_skills
+    run_step install_claude_skills
 fi
 
 # Install Claude Code settings
 if should_install "claude" "$INSTALL_CLAUDE" "$SKIP_CLAUDE"; then
-    install_claude_settings
+    run_step install_claude_settings
 fi
 
 # Install custom scripts
 if should_install "scripts" "$INSTALL_SCRIPTS" "$SKIP_SCRIPTS"; then
-    install_custom_scripts
+    run_step install_custom_scripts
 fi
 
 # Install aliases and source them from .zshrc
 if should_install "aliases" "$INSTALL_ALIASES" "$SKIP_ALIASES"; then
     print_header "Shell Configuration"
-    add_aliases_to_zshrc
+    run_step add_aliases_to_zshrc
 fi
 
 # XCode templates
 if should_install "templates" "$INSTALL_TEMPLATES" "$SKIP_TEMPLATES"; then
-    install_xcode_templates
+    run_step install_xcode_templates
 fi
 
 # Xcode themes
 if should_install "themes" "$INSTALL_THEMES" "$SKIP_THEMES"; then
-    install_xcode_themes
+    run_step install_xcode_themes
 fi
 
 # Xcode Header
 if should_install "header" "$INSTALL_HEADER" "$SKIP_HEADER"; then
-    install_xcode_header
+    run_step install_xcode_header
 fi
 
 print_selected_components() {
     local marker="$1"
     should_install "homebrew" "$INSTALL_HOMEBREW" "$SKIP_HOMEBREW" && echo -e "  $marker Homebrew package manager"
-    should_install "tools" "$INSTALL_TOOLS" "$SKIP_TOOLS" && echo -e "  $marker eza and SwiftFormat"
+    should_install "tools" "$INSTALL_TOOLS" "$SKIP_TOOLS" && echo -e "  $marker Brewfile tools"
     should_install "font" "$INSTALL_FONT" "$SKIP_FONT" && echo -e "  $marker JetBrains Mono Nerd Font"
     should_install "swiftformat-config" "$INSTALL_SWIFTFORMAT_CONFIG" "$SKIP_SWIFTFORMAT_CONFIG" && echo -e "  $marker SwiftFormat configuration"
     should_install "claude" "$INSTALL_CLAUDE" "$SKIP_CLAUDE" && echo -e "  $marker Claude Code configuration, agents and skills"
@@ -747,6 +633,9 @@ if $DRY_RUN; then
     echo -e "\n${CYAN}📋 What would be installed:${NC}"
     print_selected_components "${YELLOW}○${NC}"
     echo -e "\n${GREEN}Run without --dry-run to install:${NC} ${WHITE}./install.sh${NC}"
+elif [[ $FAILED -gt 0 ]]; then
+    print_header "Installation Finished With Errors"
+    echo -e "${RED}$FAILED step(s) failed: see the [✗] lines above${NC}"
 else
     print_header "Installation Complete!"
     print_success "Selected components installed successfully!"
@@ -759,7 +648,8 @@ else
 fi
 
 if ! $DRY_RUN && $VERIFY; then
-    echo -e "\n${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo ""
+    print_rule
     echo -e "${WHITE}Running post-installation verification...${NC}\n"
 
     if [[ -f "$REPO_DIR/health-check.sh" ]]; then
@@ -767,4 +657,8 @@ if ! $DRY_RUN && $VERIFY; then
     else
         echo -e "${YELLOW}health-check.sh not found, skipping verification${NC}"
     fi
+fi
+
+if [[ $FAILED -gt 0 ]]; then
+    exit 1
 fi

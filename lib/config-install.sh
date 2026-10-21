@@ -1,6 +1,6 @@
 #!/bin/bash
-# Copies the repo's configuration to the system. Shared by install.sh and update.sh so both
-# apply exactly the same files. Callers must source lib/common.sh and define REPO_DIR,
+# Copies the repo's configuration to the system and installs the font. Shared by install.sh
+# and update.sh so both apply exactly the same files. Callers must source lib/common.sh and define REPO_DIR,
 # DRY_RUN (true/false) and these reporters:
 #   report_unchanged  already matches the repo
 #   report_changed    installed, updated or removed
@@ -100,7 +100,7 @@ install_claude_settings() {
     fi
 
     if ! command -v jq &>/dev/null; then
-        report_warning "jq not found: skipping Claude settings merge (brew install jq)"
+        report_warning "jq not found: skipping Claude settings merge (./install.sh --only-tools)"
         return
     fi
 
@@ -222,4 +222,35 @@ install_xcode_themes() {
 install_xcode_header() {
     print_header "Xcode Header Template"
     install_or_update_file "$REPO_DIR/Headers/IDETemplateMacros.plist" "$XC_USER_DATA/IDETemplateMacros.plist" "Header template"
+}
+
+# The cask downloads the font from the Nerd Fonts GitHub release that nerdfonts.com links to and
+# checks its checksum. Fetching first tells a missing or unreachable release apart from a failed install
+install_nerd_font() {
+    if [[ -n "$(nerd_font_files)" ]]; then
+        report_unchanged "JetBrains Mono Nerd Font already installed"
+        return 0
+    fi
+    if $DRY_RUN; then
+        report_planned "Download and install the $NERD_FONT_CASK cask"
+        return 0
+    fi
+    if ! command -v brew &>/dev/null; then
+        report_failure "Homebrew not installed: run ./install.sh --only-homebrew first"
+        return 1
+    fi
+
+    if ! brew fetch --cask "$NERD_FONT_CASK"; then
+        report_failure "Could not download $NERD_FONT_CASK: check the network and https://www.nerdfonts.com/font-downloads"
+        return 1
+    fi
+    if ! brew install --cask "$NERD_FONT_CASK"; then
+        report_failure "Could not install the $NERD_FONT_CASK cask"
+        return 1
+    fi
+    if [[ -z "$(nerd_font_files)" ]]; then
+        report_failure "The $NERD_FONT_CASK cask left no font files in ~/Library/Fonts"
+        return 1
+    fi
+    report_changed "JetBrains Mono Nerd Font installed"
 }

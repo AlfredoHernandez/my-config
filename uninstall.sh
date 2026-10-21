@@ -16,14 +16,6 @@ REMOVE_SCRIPTS=false
 REMOVE_XCODE=false
 REMOVE_CLAUDE=false
 
-# Counters
-REMOVED=0
-SKIPPED=0
-FAILED=0
-
-print_success() { echo -e "${GREEN}[✓]${NC} $1"; REMOVED=$((REMOVED + 1)); }
-print_skip() { echo -e "${YELLOW}[−]${NC} $1"; SKIPPED=$((SKIPPED + 1)); }
-print_fail() { echo -e "${RED}[✗]${NC} $1"; FAILED=$((FAILED + 1)); }
 print_dry_run() { echo -e "${YELLOW}[DRY-RUN]${NC} Would remove: $1"; }
 
 show_help() {
@@ -34,7 +26,7 @@ show_help() {
     echo "Options:"
     echo "  --dry-run, -n       Preview what would be removed"
     echo "  --force, -f         Skip confirmation prompts"
-    echo "  --tools             Remove Homebrew packages (eza, swiftformat)"
+    echo "  --tools             Remove the Brewfile packages"
     echo "  --font              Remove JetBrains Mono Nerd Font"
     echo "  --config            Remove SwiftFormat configuration"
     echo "  --aliases           Remove shell aliases"
@@ -129,22 +121,21 @@ remove_tools() {
         return 0
     fi
 
-    local packages=("eza" "swiftformat")
+    local installed formula
+    installed="$(installed_formulae)"
 
-    for pkg in "${packages[@]}"; do
-        if brew list "$pkg" &>/dev/null; then
-            if $DRY_RUN; then
-                print_dry_run "$pkg (brew uninstall)"
-            else
-                print_status "Removing $pkg..."
-                if brew uninstall "$pkg" 2>/dev/null; then
-                    print_success "Removed $pkg"
-                else
-                    print_fail "Failed to remove $pkg"
-                fi
-            fi
+    for formula in $(brewfile_formulae "$REPO_DIR/Brewfile"); do
+        if [[ -z "$(formula_version "$installed" "$formula")" ]]; then
+            print_skip "$formula not installed"
+        elif $DRY_RUN; then
+            print_dry_run "$formula (brew uninstall)"
         else
-            print_skip "$pkg not installed"
+            print_status "Removing $formula..."
+            if brew uninstall "$formula" 2>/dev/null; then
+                print_success "Removed $formula"
+            else
+                print_fail "Failed to remove $formula"
+            fi
         fi
     done
 }
@@ -153,30 +144,39 @@ remove_tools() {
 remove_font() {
     print_header "JetBrains Mono Nerd Font"
 
-    local font_dir="$HOME/Library/Fonts"
-    local fonts_found=false
-
-    # Check for fonts
-    if ls "$font_dir"/JetBrainsMonoNerdFont*.ttf &>/dev/null || \
-       ls "$font_dir"/JetBrainsMonoNFM*.ttf &>/dev/null; then
-        fonts_found=true
+    if nerd_font_cask_installed; then
+        if $DRY_RUN; then
+            print_dry_run "JetBrains Mono Nerd Font (brew uninstall --cask $NERD_FONT_CASK)"
+        elif brew uninstall --cask "$NERD_FONT_CASK"; then
+            print_success "Removed JetBrains Mono Nerd Font"
+        else
+            print_fail "Failed to remove the $NERD_FONT_CASK cask"
+        fi
+        return 0
     fi
 
-    if ! $fonts_found; then
+    local files
+    files="$(nerd_font_files "$HOME/Library/Fonts")"
+    if [[ -z "$files" ]]; then
         print_skip "Font not installed"
         return 0
     fi
 
     if $DRY_RUN; then
-        local count
-        count=$(ls "$font_dir"/JetBrainsMonoNerdFont*.ttf "$font_dir"/JetBrainsMonoNFM*.ttf 2>/dev/null | wc -l | xargs)
-        print_dry_run "JetBrains Mono Nerd Font ($count files)"
-    else
-        print_status "Removing font files..."
-        rm -f "$font_dir"/JetBrainsMonoNerdFont*.ttf 2>/dev/null
-        rm -f "$font_dir"/JetBrainsMonoNFM*.ttf 2>/dev/null
-        print_success "Removed JetBrains Mono Nerd Font"
+        print_dry_run "JetBrains Mono Nerd Font ($(wc -l <<< "$files" | xargs) files)"
+        return 0
     fi
+
+    print_status "Removing font files..."
+    local file all_removed=true
+    while IFS= read -r file; do
+        if ! rm -f "$file"; then
+            print_fail "Failed to remove $file"
+            all_removed=false
+        fi
+    done <<< "$files"
+    $all_removed && print_success "Removed JetBrains Mono Nerd Font"
+    return 0
 }
 
 # Remove SwiftFormat configuration
@@ -348,21 +348,15 @@ remove_repo_entries() {
 # Print summary
 print_summary() {
     echo ""
-    echo -e "${WHITE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     if $DRY_RUN; then
-        echo -e "${WHITE}Dry Run Complete${NC}"
+        print_title "Dry Run Complete"
     else
-        echo -e "${WHITE}Uninstall Summary${NC}"
-    fi
-    echo -e "${WHITE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-
-    if ! $DRY_RUN; then
-        echo -e "  ${GREEN}✓ Removed:${NC} $REMOVED"
+        print_title "Uninstall Summary"
+        echo -e "  ${GREEN}✓ Removed:${NC} $SUCCEEDED"
         echo -e "  ${YELLOW}− Skipped:${NC} $SKIPPED"
         echo -e "  ${RED}✗ Failed:${NC}  $FAILED"
+        print_rule
     fi
-
-    echo -e "${WHITE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo ""
 
     if $DRY_RUN; then
@@ -375,11 +369,7 @@ print_summary() {
 }
 
 # Main execution
-echo -e "${WHITE}"
-echo "╔════════════════════════════════════════════════════╗"
-echo "║          🗑️  Configuration Uninstall Script         ║"
-echo "╚════════════════════════════════════════════════════╝"
-echo -e "${NC}"
+print_banner "🗑️  Configuration Uninstall Script"
 
 if $DRY_RUN; then
     echo -e "${CYAN}Running in dry-run mode - no changes will be made${NC}\n"
@@ -425,6 +415,6 @@ fi
 
 print_summary
 
-if ! $DRY_RUN && [[ $REMOVED -gt 0 ]]; then
+if ! $DRY_RUN && [[ $SUCCEEDED -gt 0 ]]; then
     echo -e "\n${YELLOW}Note:${NC} Restart your terminal for alias changes to take effect."
 fi

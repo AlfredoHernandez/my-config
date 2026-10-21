@@ -12,9 +12,11 @@ sandbox_home() {
     # Git hooks export these, and they would point the tests' git commands at the real repo
     unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_OBJECT_DIRECTORY GIT_COMMON_DIR
     unset MY_CONFIG_UPDATE_RESTARTED_FROM
+    # Git reads and writes its global config in the sandboxed HOME, not in a path set outside
+    unset GIT_CONFIG_GLOBAL
     export XDG_CONFIG_HOME="$HOME/.config" GIT_CONFIG_NOSYSTEM=1
 
-    # Homebrew and the font download are system-wide or networked: stubs log the call and fail
+    # Homebrew is system-wide and curl goes to the network: stubs log the call and fail
     STUB_LOG="$BATS_TEST_TMPDIR/stub-calls.log"
     mkdir -p "$BATS_TEST_TMPDIR/bin"
     local tool
@@ -31,11 +33,42 @@ setup() {
 
 # Read-only brew calls (the health check's) are fine; anything that changes the system is not
 teardown() {
-    if grep -qE '^brew (install|upgrade|uninstall|reinstall|tap)|^curl' "$STUB_LOG" 2>/dev/null; then
+    if grep -qE '^brew (install|upgrade|uninstall|reinstall|tap|fetch)|^brew bundle( install| --|$)|^curl' "$STUB_LOG" 2>/dev/null; then
         echo "a system-wide step ran:" >&2
         cat "$STUB_LOG" >&2
         return 1
     fi
+}
+
+# Replaces the failing brew stub with one that succeeds and logs to $BREW_LOG, which teardown
+# doesn't check. The arguments are the installed formulae as "name version" lines; installed
+# casks go one per line in $BREW_CASKS, and outdated formulae and casks in $BREW_OUTDATED.
+# The brew subcommands listed in $BREW_FAILING fail. `install --cask` adds a font file, as the
+# font cask does, unless $BREW_CASK_INSTALLS_NOTHING exists
+fake_brew() {
+    BREW_LOG="$BATS_TEST_TMPDIR/brew.log"
+    BREW_CASKS="$BATS_TEST_TMPDIR/brew-casks"
+    BREW_OUTDATED="$BATS_TEST_TMPDIR/brew-outdated"
+    BREW_FAILING="$BATS_TEST_TMPDIR/brew-failing"
+    BREW_CASK_INSTALLS_NOTHING="$BATS_TEST_TMPDIR/brew-cask-installs-nothing"
+    local formulae="$BATS_TEST_TMPDIR/brew-formulae"
+    printf '%s\n' "$@" > "$formulae"
+    touch "$BREW_LOG" "$BREW_CASKS" "$BREW_OUTDATED" "$BREW_FAILING"
+    cat > "$BATS_TEST_TMPDIR/bin/brew" <<EOF
+#!/bin/bash
+echo "brew \$*" >> "$BREW_LOG"
+grep -qxF "\$1" "$BREW_FAILING" && exit 1
+case "\$1 \$2" in
+    "list --formula") cat "$formulae" ;;
+    "list --cask") cat "$BREW_CASKS" ;;
+    "outdated --formula" | "outdated --cask") cat "$BREW_OUTDATED" ;;
+    "install --cask")
+        [[ -e "$BREW_CASK_INSTALLS_NOTHING" ]] && exit 0
+        mkdir -p "\$HOME/Library/Fonts"
+        touch "\$HOME/Library/Fonts/JetBrainsMonoNerdFont-Regular.ttf" ;;
+esac
+exit 0
+EOF
 }
 
 # Like bats' run, with stderr merged into $output and colors removed
@@ -75,6 +108,14 @@ count_files() {
 refute_output_matches() {
     if grep -qE "$1" <<< "$output"; then
         echo "output should not match: $1" >&2
+        return 1
+    fi
+}
+
+refute_brew_called() {
+    if grep -qE "$1" "$BREW_LOG"; then
+        echo "brew should not have been called with: $1" >&2
+        cat "$BREW_LOG" >&2
         return 1
     fi
 }

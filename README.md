@@ -31,7 +31,7 @@ This repository contains my personal development configuration that I use across
 
 ### 🤖 Claude Code Integration
 - **Global Configuration** - Custom instructions for Claude Code in `~/.claude/CLAUDE.md`
-- **Settings** - Shared permissions, attribution, plugins, the `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` env var, the auto mode trust context and allow rules (`autoMode.environment`, `autoMode.allow`), and the unattended-work options (`autoContinueAtUsageLimit`, `inputNeededNotifEnabled`, `askUserQuestionTimeout`). `install.sh` and `update.sh` merge only these keys into `~/.claude/settings.json` (backup in `settings.json.bak`), keep local keys such as hooks and preferences, and list any local values of these keys that the repo replaces; `sync.sh` copies only these keys back. For plugins and marketplaces the repo owns only the entries it lists, so a plugin enabled on one machine is kept there and is not copied back. The merge needs [jq](https://formulae.brew.sh/formula/jq) (`brew install jq`); without it the merge is skipped
+- **Settings** - Shared permissions, attribution, plugins, the `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` env var, the auto mode trust context and allow rules (`autoMode.environment`, `autoMode.allow`), and the unattended-work options (`autoContinueAtUsageLimit`, `inputNeededNotifEnabled`, `askUserQuestionTimeout`). `install.sh` and `update.sh` merge only these keys into `~/.claude/settings.json` (backup in `settings.json.bak`), keep local keys such as hooks and preferences, and list any local values of these keys that the repo replaces; `sync.sh` copies only these keys back. For plugins and marketplaces the repo owns only the entries it lists, so a plugin enabled on one machine is kept there and is not copied back. The merge needs [jq](https://formulae.brew.sh/formula/jq), which the `Brewfile` installs (macOS 15 and later also ship it); without it the merge is skipped
 - **Custom Agents** - Specialized AI assistants for common tasks:
   - `code-review` - Read-only senior code reviewer that reports findings and hand-offs
   - `design-patterns` - GoF design patterns expert
@@ -48,8 +48,11 @@ This repository contains my personal development configuration that I use across
 - **Custom Skills** - Skill directories (each with a `SKILL.md`) installed to `~/.claude/skills/`; none are tracked yet
 - **Deleted agents and skills** - When an agent or skill is deleted from the repo (or renamed), `install.sh` and `update.sh` remove it from `~/.claude`, so every Mac stays in sync. The list comes from git history, so agents and skills that never were in the repo are kept. `sync.sh` does not copy them back, and `health-check.sh` warns if one is still installed
 
+### 🍺 Homebrew Packages
+- **`Brewfile`** - The command-line tools every Mac gets: [jq](https://formulae.brew.sh/formula/jq), [eza](https://formulae.brew.sh/formula/eza), [SwiftFormat](https://formulae.brew.sh/formula/swiftformat) and [herdr](https://herdr.dev), which keeps coding agents such as Claude Code running in the background and shows which ones are working, blocked or idle. `install.sh` installs the missing ones with `brew bundle`, `update.sh` upgrades them and installs any new entry, and `health-check.sh` and `uninstall.sh` read the same list. To add a tool on every Mac, add a `brew "<name>"` line
+
 ### 🔤 Fonts
-- **JetBrains Mono Nerd Font** - Programming font with ligatures and icons
+- **JetBrains Mono Nerd Font** - Programming font with ligatures and icons, installed from the [`font-jetbrains-mono-nerd-font`](https://formulae.brew.sh/cask/font-jetbrains-mono-nerd-font) cask, which downloads the font from the [Nerd Fonts](https://www.nerdfonts.com/font-downloads) GitHub release and checks its checksum. The font is downloaded first (`brew fetch`), so a missing release or a network problem is reported before anything is installed, and the install fails if no font files end up in `~/Library/Fonts`. A copy installed by hand is kept, but `update.sh` can upgrade only the cask
 
 ## ⚡ Quick Installation
 
@@ -72,14 +75,13 @@ source ~/.zshrc
 The `install.sh` script automatically handles:
 
 1. **Homebrew Installation** - Installs Homebrew package manager if not present
-2. **eza Installation** - Modern replacement for `ls` with better formatting and icons
-3. **SwiftFormat Installation** - Installs SwiftFormat for automatic code formatting
-4. **JetBrains Mono Nerd Font** - Installs programming font with ligatures and icons
-5. **SwiftFormat Configuration** - Copies custom formatting rules to `~/.swiftformat`
-6. **Claude Code Configuration** - Installs global instructions, custom agents and skills to `~/.claude/`
-7. **Shell Aliases** - Installs `~/.config/aliases.zsh` and sources it from your `.zshrc`
-8. **Script Installation** - Copies custom scripts to `~/Developer/bin/`
-9. **Xcode Integration** - Installs templates and color themes
+2. **Brewfile Tools** - Installs the missing `Brewfile` packages with `brew bundle`
+3. **JetBrains Mono Nerd Font** - Downloads and installs the font cask, unless the font is already installed
+4. **SwiftFormat Configuration** - Copies custom formatting rules to `~/.swiftformat`
+5. **Claude Code Configuration** - Installs global instructions, custom agents and skills to `~/.claude/`
+6. **Shell Aliases** - Installs `~/.config/aliases.zsh` and sources it from your `.zshrc`
+7. **Script Installation** - Copies custom scripts to `~/Developer/bin/`
+8. **Xcode Integration** - Installs templates and color themes
 
 ### ⚠️ Manual step: select the font in your terminal
 
@@ -135,7 +137,7 @@ Installs or updates all components from the repo to your system. If a file alrea
 | Flag | Component |
 |------|-----------|
 | `--only-homebrew` / `--skip-homebrew` | Homebrew package manager |
-| `--only-tools` / `--skip-tools` | Development tools (eza, SwiftFormat) |
+| `--only-tools` / `--skip-tools` | `Brewfile` tools |
 | `--only-font` / `--skip-font` | JetBrains Mono Nerd Font |
 | `--only-swiftformat-config` / `--skip-swiftformat-config` | SwiftFormat configuration |
 | `--only-aliases` / `--skip-aliases` | Shell aliases |
@@ -148,15 +150,15 @@ Installs or updates all components from the repo to your system. If a file alrea
 
 ### `update.sh` - Update
 
-Updates installed components to their latest versions. Fast-forwards `main` from `origin/main` (skipped on any other branch); when the pull brings new commits, it restarts itself once so the remaining steps run the new version of the scripts. It then upgrades eza and SwiftFormat, and applies the repo's configuration with the same steps as `install.sh` (shared in `lib/config-install.sh`): SwiftFormat config, `CLAUDE.md`, Claude agents, skills and settings, custom scripts, Xcode templates, themes and the header template. Missing files are installed too, including components skipped at install time, so every Mac ends up with the same configuration. Aliases are not updated, because they also change `~/.zshrc`; run `install.sh --only-aliases` for those.
+Updates installed components to their latest versions. Fast-forwards `main` from `origin/main` (skipped on any other branch); when the pull brings new commits, it restarts itself once so the remaining steps run the new version of the scripts. It then upgrades the `Brewfile` packages and installs any that are missing, installs the font if it is missing or upgrades its cask, and applies the repo's configuration with the same steps as `install.sh` (shared in `lib/config-install.sh`): SwiftFormat config, `CLAUDE.md`, Claude agents, skills and settings, custom scripts, Xcode templates, themes and the header template. Missing files are installed too, including components skipped at install time, so every Mac ends up with the same configuration. Aliases are not updated, because they also change `~/.zshrc`; run `install.sh --only-aliases` for those.
 
 ```bash
 ./update.sh            # Update everything
 ./update.sh --check    # Show what's outdated without updating
 ./update.sh --repo     # Update repository only (git pull)
-./update.sh --tools    # Update Homebrew packages only
+./update.sh --tools    # Update the Brewfile packages only
 ./update.sh --config   # Sync configuration files only
-./update.sh --font     # Update Nerd Font only
+./update.sh --font     # Install or update the Nerd Font only
 ```
 
 ### `sync.sh` - Sync
@@ -181,7 +183,7 @@ Verifies that all components are properly installed and configured.
 ./health-check.sh
 ```
 
-- Checks if all tools are installed (Homebrew, eza, SwiftFormat, fonts)
+- Checks if Homebrew, every `Brewfile` package and the font are installed
 - Verifies configuration files exist and are properly configured
 - Validates Xcode themes, templates, and headers
 - Checks Claude Code configuration, agents and skills
@@ -203,7 +205,7 @@ Removes installed components from your system.
 #### Uninstall Specific Components
 
 ```bash
-./uninstall.sh --tools      # Remove Homebrew packages (eza, swiftformat)
+./uninstall.sh --tools      # Remove the Brewfile packages
 ./uninstall.sh --font       # Remove JetBrains Mono Nerd Font
 ./uninstall.sh --config     # Remove SwiftFormat configuration
 ./uninstall.sh --aliases    # Remove shell aliases
@@ -226,7 +228,7 @@ Removes installed components from your system.
 | `gca` | `git commit --amend --no-edit` | Amend last commit |
 | `glog` | `git log` | Show commit history |
 | `gcp` | `git cherry-pick` | Cherry-pick commits |
-| `cleanup` | `git branch --merged \| grep -Ev "(^\*\|master\|main\|develop)" \| xargs git branch -d` | Delete merged branches except main, master and develop |
+| `cleanup` | `git fetch --prune`, then `git branch -D` on the branches marked `[gone]` | Delete the local branches whose remote branch was deleted (after a squash merge, for example). Lists them and asks first; keeps branches checked out here or in another worktree |
 | `grh` | `git reset --soft HEAD~1` | Soft reset last commit |
 
 ### Xcode & Swift
@@ -308,8 +310,7 @@ The repository includes 8 color themes:
 - **macOS** (tested on macOS 12+)
 - **Xcode** (for templates and themes)
 - **zsh shell** (default on modern macOS)
-- **Internet connection** (for Homebrew and eza installation)
-- **jq** (to merge Claude Code settings)
+- **Internet connection** (for Homebrew and the `Brewfile` packages)
 
 ## 🤝 Contributing
 

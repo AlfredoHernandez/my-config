@@ -52,7 +52,7 @@ This repository contains my personal development configuration that I use across
 - **`Brewfile`** - The command-line tools every Mac gets: [jq](https://formulae.brew.sh/formula/jq), [eza](https://formulae.brew.sh/formula/eza), [SwiftFormat](https://formulae.brew.sh/formula/swiftformat) and [herdr](https://herdr.dev), which keeps coding agents such as Claude Code running in the background and shows which ones are working, blocked or idle. `install.sh` installs the missing ones with `brew bundle`, `update.sh` upgrades them and installs any new entry, and `health-check.sh` and `uninstall.sh` read the same list. To add a tool on every Mac, add a `brew "<name>"` line
 
 ### 🔤 Fonts
-- **JetBrains Mono Nerd Font** - Programming font with ligatures and icons, installed from the [`font-jetbrains-mono-nerd-font`](https://formulae.brew.sh/cask/font-jetbrains-mono-nerd-font) cask. A copy installed by hand is kept, but `update.sh` can upgrade only the cask
+- **JetBrains Mono Nerd Font** - Programming font with ligatures and icons, installed from the [`font-jetbrains-mono-nerd-font`](https://formulae.brew.sh/cask/font-jetbrains-mono-nerd-font) cask, which downloads the font from the [Nerd Fonts](https://www.nerdfonts.com/font-downloads) GitHub release and checks its checksum. The font is downloaded first (`brew fetch`), so a missing release or a network problem is reported before anything is installed, and the install fails if no font files end up in `~/Library/Fonts`. A copy installed by hand is kept, but `update.sh` can upgrade only the cask
 
 ## ⚡ Quick Installation
 
@@ -76,7 +76,7 @@ The `install.sh` script automatically handles:
 
 1. **Homebrew Installation** - Installs Homebrew package manager if not present
 2. **Brewfile Tools** - Installs the missing `Brewfile` packages with `brew bundle`
-3. **JetBrains Mono Nerd Font** - Installs the font cask, unless the font is already installed
+3. **JetBrains Mono Nerd Font** - Downloads and installs the font cask, unless the font is already installed
 4. **SwiftFormat Configuration** - Copies custom formatting rules to `~/.swiftformat`
 5. **Claude Code Configuration** - Installs global instructions, custom agents and skills to `~/.claude/`
 6. **Shell Aliases** - Installs `~/.config/aliases.zsh` and sources it from your `.zshrc`
@@ -150,7 +150,7 @@ Installs or updates all components from the repo to your system. If a file alrea
 
 ### `update.sh` - Update
 
-Updates installed components to their latest versions. Fast-forwards `main` from `origin/main` (skipped on any other branch); when the pull brings new commits, it restarts itself once so the remaining steps run the new version of the scripts. It then upgrades the `Brewfile` packages and installs any that are missing, upgrades the font cask, and applies the repo's configuration with the same steps as `install.sh` (shared in `lib/config-install.sh`): SwiftFormat config, `CLAUDE.md`, Claude agents, skills and settings, custom scripts, Xcode templates, themes and the header template. Missing files are installed too, including components skipped at install time, so every Mac ends up with the same configuration. Aliases are not updated, because they also change `~/.zshrc`; run `install.sh --only-aliases` for those.
+Updates installed components to their latest versions. Fast-forwards `main` from `origin/main` (skipped on any other branch); when the pull brings new commits, it restarts itself once so the remaining steps run the new version of the scripts. It then upgrades the `Brewfile` packages and installs any that are missing, installs the font if it is missing or upgrades its cask, and applies the repo's configuration with the same steps as `install.sh` (shared in `lib/config-install.sh`): SwiftFormat config, `CLAUDE.md`, Claude agents, skills and settings, custom scripts, Xcode templates, themes and the header template. Missing files are installed too, including components skipped at install time, so every Mac ends up with the same configuration. Aliases are not updated, because they also change `~/.zshrc`; run `install.sh --only-aliases` for those.
 
 ```bash
 ./update.sh            # Update everything
@@ -158,7 +158,7 @@ Updates installed components to their latest versions. Fast-forwards `main` from
 ./update.sh --repo     # Update repository only (git pull)
 ./update.sh --tools    # Update the Brewfile packages only
 ./update.sh --config   # Sync configuration files only
-./update.sh --font     # Update Nerd Font only
+./update.sh --font     # Install or update the Nerd Font only
 ```
 
 ### `sync.sh` - Sync

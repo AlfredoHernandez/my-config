@@ -460,26 +460,7 @@ install_tools() {
 
 install_jetbrains_mono_nerd_font() {
     print_header "JetBrains Mono Nerd Font Installation"
-
-    if [[ -n "$(nerd_font_files)" ]]; then
-        print_success "JetBrains Mono Nerd Font already installed"
-        return 0
-    fi
-    if $DRY_RUN; then
-        print_dry_run "Install the $NERD_FONT_CASK cask"
-        return 0
-    fi
-    if ! command_exists brew; then
-        print_fail "Homebrew not installed: run ./install.sh --only-homebrew first"
-        return 0
-    fi
-
-    print_status "Installing JetBrains Mono Nerd Font..."
-    if brew install --cask "$NERD_FONT_CASK"; then
-        print_success "JetBrains Mono Nerd Font installed successfully"
-    else
-        print_fail "Could not install the $NERD_FONT_CASK cask"
-    fi
+    install_nerd_font
 }
 
 # Function to add aliases to .zshrc

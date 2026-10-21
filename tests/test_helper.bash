@@ -33,7 +33,7 @@ setup() {
 
 # Read-only brew calls (the health check's) are fine; anything that changes the system is not
 teardown() {
-    if grep -qE '^brew (install|upgrade|uninstall|reinstall|tap)|^brew bundle( install| --|$)|^curl' "$STUB_LOG" 2>/dev/null; then
+    if grep -qE '^brew (install|upgrade|uninstall|reinstall|tap|fetch)|^brew bundle( install| --|$)|^curl' "$STUB_LOG" 2>/dev/null; then
         echo "a system-wide step ran:" >&2
         cat "$STUB_LOG" >&2
         return 1
@@ -42,21 +42,30 @@ teardown() {
 
 # Replaces the failing brew stub with one that succeeds and logs to $BREW_LOG, which teardown
 # doesn't check. The arguments are the installed formulae as "name version" lines; installed
-# casks go one per line in $BREW_CASKS, and outdated formulae and casks in $BREW_OUTDATED
+# casks go one per line in $BREW_CASKS, and outdated formulae and casks in $BREW_OUTDATED.
+# The brew subcommands listed in $BREW_FAILING fail. `install --cask` adds a font file, as the
+# font cask does, unless $BREW_CASK_INSTALLS_NOTHING exists
 fake_brew() {
     BREW_LOG="$BATS_TEST_TMPDIR/brew.log"
     BREW_CASKS="$BATS_TEST_TMPDIR/brew-casks"
     BREW_OUTDATED="$BATS_TEST_TMPDIR/brew-outdated"
+    BREW_FAILING="$BATS_TEST_TMPDIR/brew-failing"
+    BREW_CASK_INSTALLS_NOTHING="$BATS_TEST_TMPDIR/brew-cask-installs-nothing"
     local formulae="$BATS_TEST_TMPDIR/brew-formulae"
     printf '%s\n' "$@" > "$formulae"
-    touch "$BREW_LOG" "$BREW_CASKS" "$BREW_OUTDATED"
+    touch "$BREW_LOG" "$BREW_CASKS" "$BREW_OUTDATED" "$BREW_FAILING"
     cat > "$BATS_TEST_TMPDIR/bin/brew" <<EOF
 #!/bin/bash
 echo "brew \$*" >> "$BREW_LOG"
+grep -qxF "\$1" "$BREW_FAILING" && exit 1
 case "\$1 \$2" in
     "list --formula") cat "$formulae" ;;
     "list --cask") cat "$BREW_CASKS" ;;
     "outdated --formula" | "outdated --cask") cat "$BREW_OUTDATED" ;;
+    "install --cask")
+        [[ -e "$BREW_CASK_INSTALLS_NOTHING" ]] && exit 0
+        mkdir -p "\$HOME/Library/Fonts"
+        touch "\$HOME/Library/Fonts/JetBrainsMonoNerdFont-Regular.ttf" ;;
 esac
 exit 0
 EOF

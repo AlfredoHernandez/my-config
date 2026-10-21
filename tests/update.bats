@@ -14,6 +14,8 @@ make_fake_origin() {
     push_src
     git clone -q --branch main "$GIT_DIR_ROOT/origin.git" "$GIT_DIR_ROOT/local"
     LOCAL_REPO="$GIT_DIR_ROOT/local"
+    # The restart tests run the font step, which installs the font when it is missing
+    fake_brew
 }
 
 commit_src() { git -C "$GIT_DIR_ROOT/src" -c user.name=test -c user.email=test@example.com commit -qam "$1"; }

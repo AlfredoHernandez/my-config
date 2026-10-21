@@ -250,12 +250,8 @@ update_font() {
     fi
 
     if [[ -z "$(nerd_font_files)" ]]; then
-        if $CHECK_ONLY; then
-            print_check "JetBrains Mono Nerd Font not installed"
-        else
-            print_info "Font not installed: run ./install.sh --only-font"
-        fi
-        return 0
+        install_nerd_font
+        return
     fi
 
     print_skip "JetBrains Mono Nerd Font installed by hand, so Homebrew can't upgrade it"

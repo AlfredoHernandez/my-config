@@ -54,13 +54,35 @@ install_font_by_hand() {
     grep -q "Would: Install from the Brewfile: jq eza swiftformat herdr" <<< "$output"
 }
 
-@test "install gets the font from its Homebrew cask" {
+@test "install downloads the font cask, then installs it and finds its files" {
     fake_brew
 
     run_script "$REPO_DIR/install.sh" --only-font --no-verify
 
     [ "$status" -eq 0 ]
-    grep -qxF "brew install --cask $FONT_CASK" "$BREW_LOG"
+    [ "$(grep -E "cask $FONT_CASK" "$BREW_LOG")" = "$(printf 'brew fetch --cask %s\nbrew install --cask %s' "$FONT_CASK" "$FONT_CASK")" ]
+    grep -q "JetBrains Mono Nerd Font installed" <<< "$output"
+}
+
+@test "install doesn't install the font when its download fails" {
+    fake_brew
+    echo fetch > "$BREW_FAILING"
+
+    run_script "$REPO_DIR/install.sh" --only-font --no-verify
+
+    [ "$status" -eq 1 ]
+    grep -q "Could not download $FONT_CASK" <<< "$output"
+    refute_brew_called "install --cask"
+}
+
+@test "install fails when the font cask leaves no font files" {
+    fake_brew
+    touch "$BREW_CASK_INSTALLS_NOTHING"
+
+    run_script "$REPO_DIR/install.sh" --only-font --no-verify
+
+    [ "$status" -eq 1 ]
+    grep -q "no font files" <<< "$output"
 }
 
 @test "install keeps a font installed by hand" {
@@ -130,6 +152,16 @@ install_font_by_hand() {
     refute_brew_called "bundle|upgrade"
 }
 
+@test "update installs the font when it is missing" {
+    fake_brew
+
+    run_script "$REPO_DIR/update.sh" --font
+
+    [ "$status" -eq 0 ]
+    grep -qxF "brew install --cask $FONT_CASK" "$BREW_LOG"
+    [ -f "$HOME/Library/Fonts/JetBrainsMonoNerdFont-Regular.ttf" ]
+}
+
 @test "update leaves a font installed by hand alone" {
     fake_brew
     install_font_by_hand
@@ -174,7 +206,7 @@ install_font_by_hand() {
 
 @test "install ends with an error when a step fails" {
     fake_brew
-    sed -i '' 's/^exit 0$/exit 1/' "$BATS_TEST_TMPDIR/bin/brew"
+    echo install > "$BREW_FAILING"
 
     run_script "$REPO_DIR/install.sh" --only-font --no-verify
 

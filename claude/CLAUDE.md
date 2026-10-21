@@ -8,6 +8,7 @@
 - Do not add "Made by Claude", "Generated with [Claude Code](https://claude.com/claude-code)" or something like that in the commit messages or PR descriptions
 - When a logical change is complete, commit it right away as an atomic commit, with the message from the `git-commit-messages` agent. Stage files by path, never `git add -A`. Never push (see the push rule) and never amend or rewrite commits unless I ask
 - Commit atomically while working, but push the branch only when the feature is ready, not after each atomic commit
+- Don't use git worktrees unless I ask for them: no `git worktree add`, no worktree tools and no agents with worktree isolation. Work on a branch in the current checkout
 
 # Pull Requests
 - When creating a PR, assign it to me (`gh pr create --assignee @me`)
